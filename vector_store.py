@@ -1,0 +1,127 @@
+import os
+import chromadb
+from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+from transformers import AutoTokenizer
+
+# ChromaDB setup
+chroma_path = "chroma_storage"
+embedding_func = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+client = chromadb.PersistentClient(path=chroma_path)
+
+# Optional: Tokenizer for performance-optimized token counting
+tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+_token_cache = {}
+
+def get_or_create_collection(name="hr_docs"):
+    """Fetch or create a ChromaDB collection for HR documents."""
+    return client.get_or_create_collection(name=name, embedding_function=embedding_func)
+
+def add_document_chunks(doc_id, chunks, embeddings=None):
+    """
+    Add document chunks into ChromaDB.
+    
+    Args:
+        doc_id (str): Unique document ID.
+        chunks (List[str]): Text chunks to index.
+        embeddings (List[List[float]], optional): Precomputed embeddings.
+    """
+    collection = get_or_create_collection()
+    ids = [f"{doc_id}_{i}" for i in range(len(chunks))]
+    metadatas = [{"doc_id": doc_id} for _ in chunks]
+
+    try:
+        if embeddings:
+            collection.add(documents=chunks, embeddings=embeddings, ids=ids, metadatas=metadatas)
+        else:
+            collection.add(documents=chunks, ids=ids, metadatas=metadatas)
+    except Exception as e:
+        print(f"[❌] Error adding chunks for {doc_id}: {e}")
+
+def delete_document_embeddings(doc_id):
+    """
+    Remove all chunks for a specific document ID from ChromaDB.
+    
+    Args:
+        doc_id (str): Unique document identifier used when indexing.
+    """
+    collection = get_or_create_collection()
+    try:
+        all_data = collection.get()
+        all_ids = all_data.get("ids", [])
+        ids_to_delete = [doc for doc in all_ids if doc.startswith(f"{doc_id}_")]
+        if ids_to_delete:
+            collection.delete(ids=ids_to_delete)
+            print(f"[✅] Deleted {len(ids_to_delete)} chunks for {doc_id}")
+        else:
+            print(f"[ℹ️] No chunks found for document {doc_id}")
+    except Exception as e:
+        print(f"[❌] Error deleting document {doc_id}: {e}")
+
+def search_context(query, top_k=8, doc_id=None):
+    """
+    Perform semantic search to retrieve top matching chunks for a query,
+    optionally filtered by doc_id.
+    
+    Args:
+        query (str): Natural language query.
+        top_k (int): Number of results to return.
+        doc_id (str, optional): If provided, filters results to this document ID.
+    
+    Returns:
+        List[str]: Top matching document chunks.
+    """
+    collection = get_or_create_collection()
+    try:
+        filters = {"doc_id": doc_id} if doc_id else None
+        results = collection.query(
+            query_texts=[query],
+            n_results=top_k,
+            where=filters
+        )
+        documents = results.get("documents", [])
+        return documents[0] if documents and len(documents[0]) > 0 else []
+    except Exception as e:
+        print(f"[❌] Error during search for query '{query}': {e}")
+        return []
+
+
+def list_documents():
+    """
+    List all unique document IDs stored in ChromaDB.
+    
+    Returns:
+        List[str]: Sorted list of document IDs.
+    """
+    collection = get_or_create_collection()
+    try:
+        all_data = collection.get(include=["metadatas"])
+        doc_ids = set(meta.get("doc_id", "") for meta in all_data.get("metadatas", []) if "doc_id" in meta)
+        return sorted(list(doc_ids))
+    except Exception as e:
+        print(f"[❌] Error listing documents: {e}")
+        return []
+
+def get_avg_tokens_per_chunk(chunks):
+    """
+    Compute the average number of tokens per chunk using a cached tokenizer.
+
+    Args:
+        chunks (List[str]): List of text chunks.
+
+    Returns:
+        float: Average number of tokens per chunk.
+    """
+    if not chunks:
+        return 0
+
+    total_tokens = 0
+    for chunk in chunks:
+        if chunk in _token_cache:
+            total_tokens += _token_cache[chunk]
+        else:
+            tokens = tokenizer.encode(chunk, add_special_tokens=False)
+            token_count = len(tokens)
+            _token_cache[chunk] = token_count
+            total_tokens += token_count
+
+    return total_tokens / len(chunks)

@@ -1,0 +1,7 @@
+import os
+
+GEMINI_API_KEY = "AIzaSyDQDG3BnXlzBkCv6yQ54y8skC3UgMR9LmM"
+
+#1st API AIzaSyAg5CkvHJZJxXpjkYPueG2xO-5PZdypcF8
+#2nd API AIzaSyDQDG3BnXlzBkCv6yQ54y8skC3UgMR9LmM
+#3rd API AIzaSyCZvWDk9ydZNBeSRasZrpcE6Q8kJ2Zrmdk

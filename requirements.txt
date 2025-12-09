@@ -1,0 +1,17 @@
+# Core dependencies
+streamlit
+google-generativeai
+chromadb
+sentence-transformers
+tiktoken
+PyPDF2
+nltk
+pandas
+pdf2image
+
+# FastAPI and workflow engine
+fastapi
+uvicorn[standard]
+pydantic[email]
+python-multipart
+watchdog
