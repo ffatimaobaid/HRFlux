@@ -52,36 +52,49 @@ logs/
 .env.test.local
 .env.production.local
 
-# Large files
-*.pyd
-*.dll
-*.so
-*.pth
-*.bin
-*.pt
-*.pkl
-*.h5
-*.hdf5
-*.zip
-*.gz
-*.tar
+# API Keys and Secrets
+config.py
+*.key
+*.pem
+secrets.json
+
+# Database files
 *.db
 *.sqlite
 *.sqlite3
+queries.db
+query_cache.db
+
+# Vector stores and embeddings
+chroma_storage/
 *.index
-*.data-00000-of-00001
+vector.index
+*.pkl
+chunks.pkl
+
+# Large model files
+*.pth
+*.bin
+*.pt
+*.h5
+*.hdf5
 *.ckpt
 *.safetensors
 *.gguf
 *.ggml
-venv/
-env/
-myenv/
-.venv/
-__pycache__/
+*.data-00000-of-00001
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+
+# Excel/CSV data files (optional - uncomment if needed)
+# *.xlsx
+# *.csv
+chat_logs.xlsx
+
+# OS specific
 *.pyd
 *.dll
 *.so
-*.log
-*.db
-*.sqlite
