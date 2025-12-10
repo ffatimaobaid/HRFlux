@@ -5,6 +5,7 @@ chromadb
 sentence-transformers
 tiktoken
 PyPDF2
+pymupdf
 nltk
 pandas
 pdf2image
@@ -20,5 +21,13 @@ watchdog
 opencv-python
 moviepy
 pydub
-speechrecognition
+SpeechRecognition
 Pillow
+pytesseract
+transformers
+beautifulsoup4
+python-docx
+python-pptx
+EbookLib
+torch
+torchvision

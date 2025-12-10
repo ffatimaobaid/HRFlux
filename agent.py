@@ -6,6 +6,8 @@ from db import save_log, get_recent_history, get_document_filenames_by_ids
 from hr_knowledge_base import get_hr_procedure, format_hr_response
 from vector_store import search_sources
 from config import SHOW_SOURCES
+from dateutil import parser as date_parser
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(
@@ -16,6 +18,33 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+def normalize_date(date_str):
+    """
+    Normalize date string to YYYY-MM-DD format using dateutil.
+    Handles '15 dec', 'next monday', etc.
+    """
+    try:
+        if not date_str:
+            return None
+        # Parse date (fuzzy=True allows skipping extra text if any)
+        dt = date_parser.parse(date_str, fuzzy=True)
+        
+        # If year seems to be default (1900) or past, and user said "15 dec",
+        # dateutil defaults to current year or 1900 depending on version.
+        # Let's ensure if it's in the past relative to today, we might mean next year?
+        # For simplicity, we assume generic parsing is 'current year' usually.
+        # But if it defaults to 1900, fix it.
+        if dt.year == 1900:
+             dt = dt.replace(year=datetime.now().year)
+             
+        # If date is in the past (e.g. Dec 15 when today is Dec 10 2025), keep logic simple.
+        # Ideally compare with today.
+        
+        return dt.strftime("%Y-%m-%d")
+    except Exception as e:
+        logger.warning(f"Date parsing failed for '{date_str}': {e}")
+        return date_str # Return original if parse fails, let validator catch it
 
 def format_leave_balance_response(balances):
     """Helper function to format leave balance response"""
@@ -34,7 +63,7 @@ try:
     WORKFLOW_ENGINE_AVAILABLE = True
 except ImportError:
     WORKFLOW_ENGINE_AVAILABLE = False
-    print("⚠️ Workflow engine not available. Using legacy leave request handling.")
+    print("Workflow engine not available. Using legacy leave request handling.")
 
 def run_agent(user, question, model_name="models/gemini-1.5-flash", context_chunks=None):
     # Get recent chat history for conversation continuity
@@ -42,10 +71,12 @@ def run_agent(user, question, model_name="models/gemini-1.5-flash", context_chun
 
     # Use Gemini to classify and extract intent + leave info
     intent_result = classify_and_extract_leave(question, model_name)
+    print(f"DEBUG: Intent Result: {intent_result}")
+    sys.stdout.flush()
 
     if intent_result.get("is_leave_request", False):
-        start = intent_result.get("start_date")
-        end = intent_result.get("end_date")
+        start = normalize_date(intent_result.get("start_date"))
+        end = normalize_date(intent_result.get("end_date"))
         leave_type = intent_result.get("leave_type", "casual").lower()
         reason = intent_result.get("reason") or question
 

@@ -193,22 +193,22 @@ def ingest_document(file_path):
 
 # --- Hybrid Retrieval for RAG ---
 def retrieve_context(query, top_k=5):
-    print(f"\n🔍 [RAG] Retrieving hybrid context for query: {query}")
+    print(f"\n[RAG] Retrieving hybrid context for query: {query}")
     
     dense_results = []
     keyword_results = []
 
     try:
         dense_results = search_context(query, top_k=top_k)
-        print(f"✅ Dense results: {len(dense_results)}")
+        print(f"Dense results: {len(dense_results)}")
     except Exception as e:
-        print(f"❌ Dense search failed for query '{query}': {e}")
+        print(f"Dense search failed for query '{query}': {e}")
 
     try:
         keyword_results = keyword_search(query, top_k=top_k)
-        print(f"✅ Keyword results: {len(keyword_results)}")
+        print(f"Keyword results: {len(keyword_results)}")
     except Exception as e:
-        print(f"❌ Keyword search failed for query '{query}': {e}")
+        print(f"Keyword search failed for query '{query}': {e}")
 
     # Combine and deduplicate
     seen = set()
@@ -222,6 +222,6 @@ def retrieve_context(query, top_k=5):
     if not combined:
         print(f"⚠️ [RAG] No context found for query: {query}")
     else:
-        print(f"✅ [RAG] Returning {len(combined[:top_k])} hybrid context chunks.")
+        print(f"[RAG] Returning {len(combined[:top_k])} hybrid context chunks.")
 
     return combined[:top_k]

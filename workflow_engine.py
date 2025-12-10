@@ -339,6 +339,65 @@ class LeaveWorkflowEngine:
         }
 
 
+    @staticmethod
+    def get_all_escalations():
+        """
+        Get all workflow escalations.
+        """
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        c.execute("""
+            SELECT we.*, lr.employee_id, e.full_name
+            FROM workflow_escalations we
+            JOIN leave_requests_v2 lr ON we.request_id = lr.id
+            JOIN employees e ON lr.employee_id = e.employee_id
+            ORDER BY we.escalated_at DESC
+        """)
+        
+        rows = c.fetchall()
+        conn.close()
+        
+        escalations = []
+        columns = ['id', 'request_id', 'request_type', 'escalated_to', 'escalated_from', 
+                   'reason', 'status', 'escalated_at', 'resolved_at', 'employee_id', 'employee_name']
+        
+        for row in rows:
+            escalations.append(dict(zip(columns, row)))
+            
+        return escalations
+
+
+    @staticmethod
+    def resolve_escalation(escalation_id, resolution_notes):
+        """
+        Resolve a workflow escalation.
+        """
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        try:
+            c.execute("""
+                UPDATE workflow_escalations
+                SET status = 'resolved',
+                    resolved_at = ?,
+                    reason = reason || ' | Resolution: ' || ?
+                WHERE id = ?
+            """, (datetime.now().isoformat(), resolution_notes, escalation_id))
+            
+            if c.rowcount == 0:
+                return {'success': False, 'message': 'Escalation not found'}
+                
+            conn.commit()
+            return {'success': True, 'message': 'Escalation resolved successfully'}
+            
+        except Exception as e:
+            conn.rollback()
+            return {'success': False, 'message': f'Error resolving escalation: {str(e)}'}
+        finally:
+            conn.close()
+
+
 def get_employee_leave_history(employee_id, limit=10):
     """Get leave request history for an employee."""
     conn = sqlite3.connect(DB_PATH)

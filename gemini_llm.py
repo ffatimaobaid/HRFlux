@@ -155,7 +155,7 @@ def query_gemini(context_chunks, question, model_name="models/gemini-2.5-flash",
     return response
 
 
-def classify_and_extract_leave(message: str, model_name="models/gemini-2.5-flash"):
+def classify_and_extract_leave(message: str, model_name="models/gemini-2.5-flash", max_retries=3):
     
     prompt = (
         "You are an HR assistant.\n\n"
@@ -164,8 +164,8 @@ def classify_and_extract_leave(message: str, model_name="models/gemini-2.5-flash
         "{\n"
         '  "is_leave_request": true,\n'
         '  "leave_type": "<sick/casual/emergency/annual/...>",\n'
-        '  "start_date": "<YYYY-MM-DD or natural date>",\n'
-        '  "end_date": "<YYYY-MM-DD or natural date>",\n'
+        '  "start_date": "<YYYY-MM-DD>",\n'
+        '  "end_date": "<YYYY-MM-DD>",\n'
         '  "reason": "<brief reason>"\n'
         "}\n\n"
         "If it is NOT a leave request, respond ONLY with:\n"
@@ -176,15 +176,55 @@ def classify_and_extract_leave(message: str, model_name="models/gemini-2.5-flash
         f"Message: \"{message}\""
     )
 
-    try:
-        model = genai.GenerativeModel(model_name=model_name)
-        response = model.generate_content(prompt)
-        raw_output = response.text.strip()
-
+    for attempt in range(max_retries):
         try:
-            return json.loads(raw_output)
-        except json.JSONDecodeError:
-            return {"is_leave_request": False, "error": "Gemini returned invalid JSON."}
+            model = genai.GenerativeModel(model_name=model_name)
+            response = model.generate_content(prompt)
+            raw_output = response.text.strip()
+            
+            # Strip markdown code blocks if present
+            if raw_output.startswith("```"):
+                # Remove first line (```json or ```)
+                raw_output = raw_output.split("\n", 1)[1]
+                # Remove last line (```)
+                if raw_output.endswith("```"):
+                    raw_output = raw_output.rsplit("\n", 1)[0]
+            
+            raw_output = raw_output.strip()
 
-    except Exception as e:
-        return {"is_leave_request": False, "error": str(e)}
+            try:
+                return json.loads(raw_output)
+            except json.JSONDecodeError:
+                # Try to find JSON object with regex as fallback
+                import re
+                match = re.search(r"\{.*\}", raw_output, re.DOTALL)
+                if match:
+                    try:
+                        return json.loads(match.group(0))
+                    except:
+                        pass
+                
+                print(f"JSON Decode Error. Raw output was: {raw_output}")
+                return {"is_leave_request": False, "error": "Gemini returned invalid JSON."}
+
+        except Exception as e:
+            error_str = str(e)
+            print(f"Intent extraction attempt {attempt + 1}/{max_retries} failed: {error_str}")
+            
+            # Check if it's a quota/rate limit error
+            if ("429" in error_str or "quota" in error_str.lower() or 
+                "resource has been exhausted" in error_str.lower() or 
+                "rate limit" in error_str.lower()):
+                
+                if attempt < max_retries - 1:
+                    print(f"API quota reached during intent extraction, rotating to next key...")
+                    new_key = rotate_api_key()
+                    genai.configure(api_key=new_key)
+                    time.sleep(2)  # Brief pause before retry
+                    continue
+            
+            # If not quota error or retries exhausted
+            if attempt == max_retries - 1:
+                return {"is_leave_request": False, "error": str(e)}
+    
+    return {"is_leave_request": False, "error": "Failed after retries"}

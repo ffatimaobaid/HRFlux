@@ -2,9 +2,9 @@ import os
 
 # Multiple Gemini API keys for rotation
 GEMINI_API_KEYS = [
-    "AIzaSyCZvWDk9ydZNBeSRasZrpcE6Q8kJ2Zrmdk",
-    "AIzaSyDQDG3BnXlzBkCv6yQ54y8skC3UgMR9LmM",
-    "AIzaSyAg5CkvHJZJxXpjkYPueG2xO-5PZdypcF8"
+    "AIzaSyCOJcyvJAQcK8a5VjVLENxzeTUwJMmsisc",
+    "AIzaSyAcPIaR02vF_zApBYPm_z8yi7gH6VD0IUI",
+    "AIzaSyA0_lc-IaJSGBv_CjfcnYGd9SksNkvAERg"
 ]
 
 # Current key index for rotation
