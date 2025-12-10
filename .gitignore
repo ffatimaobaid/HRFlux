@@ -74,3 +74,14 @@ logs/
 *.safetensors
 *.gguf
 *.ggml
+venv/
+env/
+myenv/
+.venv/
+__pycache__/
+*.pyd
+*.dll
+*.so
+*.log
+*.db
+*.sqlite
