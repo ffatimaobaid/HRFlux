@@ -42,7 +42,9 @@ def extract_with_unstructured(file_path):
     """
     Uses the `unstructured` library to extract text from supported files.
     """
-    elements = partition(file_path=file_path)
+    # Newer versions of `unstructured` expect `filename`, not `file_path` or `path`.
+    # This fixes: "Exactly one of file, filename and url must be specified".
+    elements = partition(filename=file_path)
     return "\n".join([el.text for el in elements if hasattr(el, 'text') and el.text])
 
 def extract_text_from_image(image_path):

@@ -37,26 +37,39 @@ if st.button("Save Model Selection"):
     st.success(f"Model set to: {selected_model}")
 
 # --- Upload Section ---
-st.subheader("Upload New HR Document")
+st.subheader("Upload New HR Content (Documents, Images, Video, Audio)")
 
+# Supported types match the logic in rag.ingest_document / multimodal_processor
 file = st.file_uploader(
-    "Choose a document (PDF, Word, PPT, HTML, EPUB)",
-    type=["pdf", "docx", "pptx", "html", "epub"]
+    "Choose a file (PDF, Word, PPT, HTML, EPUB, Images, Video, Audio)",
+    type=[
+        # Text / docs
+        "pdf", "docx", "pptx", "html", "epub",
+        # Images
+        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp",
+        # Video
+        "mp4", "avi", "mov", "mkv", "wmv", "flv", "webm",
+        # Audio
+        "mp3", "wav", "m4a", "flac", "aac", "ogg",
+    ]
 )
 
 if file:
     os.makedirs("policy_docs", exist_ok=True)
     file_path = os.path.join("policy_docs", file.name)
 
-    with st.spinner("Uploading and indexing document..."):
+    with st.spinner("Uploading and indexing content (text / image / video / audio)..."):
         try:
             # Save the file locally
             with open(file_path, "wb") as f:
                 f.write(file.read())
 
-            # Ingest the document
+            # Ingest the file (RAG will auto-detect text vs media)
             chunks, avg_tokens, doc_id = ingest_document(file_path)
-            st.success(f"Uploaded and indexed {chunks} chunks. Avg tokens/chunk: {avg_tokens:.2f}")
+            if chunks is None:
+                st.error("File could not be processed. Check logs for details.")
+            else:
+                st.success(f"Uploaded and indexed {chunks} chunks. Avg tokens/chunk: {avg_tokens:.2f}")
         except Exception as e:
             st.error(f"Failed to process document: {e}")
 

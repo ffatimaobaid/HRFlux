@@ -1,10 +1,12 @@
 import google.generativeai as genai
-from config import GEMINI_API_KEY
+from config import get_current_api_key, rotate_api_key
 import json
 from embedder import model  # For embeddings
 import numpy as np
+import time
 
-genai.configure(api_key=GEMINI_API_KEY)
+# Initialize with current API key
+genai.configure(api_key=get_current_api_key())
 
 # List of FAQ/reference questions for suggestions
 FAQ_QUESTIONS = [
@@ -18,6 +20,16 @@ FAQ_QUESTIONS = [
     "Can I accept gifts from clients?",
     "What is the sick leave policy?",
     "How do I report a rule violation?",
+    "How do I submit documents to HR?",
+    "What is the salary advance process?",
+    "When will I get my payslip?",
+    "What is the performance review process?",
+    "How do I request reimbursement?",
+    "What is the resignation process?",
+    "What are the working hours?",
+    "How do I check my leave balance?",
+    "What benefits am I eligible for?",
+    "How do I report a safety issue?",
 ]
 
 def get_similar_questions(user_query, faq_questions=FAQ_QUESTIONS, top_n=3):
@@ -43,8 +55,9 @@ def get_similar_questions(user_query, faq_questions=FAQ_QUESTIONS, top_n=3):
     return [faq_questions[i] for i in top_indices]
 
 
-def query_gemini(context_chunks, question, model_name="models/gemini-2.5-flash", chat_history=None):
-
+def query_gemini_with_retry(context_chunks, question, model_name="models/gemini-2.5-flash", chat_history=None, hr_knowledge=None, max_retries=3):
+    """Query Gemini with automatic key rotation on quota limits"""
+    
     # Build history string
     if chat_history:
         formatted = [
@@ -56,18 +69,32 @@ def query_gemini(context_chunks, question, model_name="models/gemini-2.5-flash",
     else:
         history_str = "No prior exchanges available."
 
-    # FIX: join outside the f-string (no backslashes in f-string expressions)
-    context_text = "\n\n".join(context_chunks)
+    # Build context text
+    context_text = "\n\n".join(context_chunks) if context_chunks else "No specific document content available."
+    
+    # Add HR knowledge if provided
+    hr_knowledge_text = ""
+    if hr_knowledge:
+        hr_knowledge_text = f"\n\nGeneral HR Knowledge:\n{hr_knowledge}"
 
+    # Build the complete prompt
     prompt = f"""
-You are a professional, helpful HR assistant.
+You are a professional, helpful HR assistant with comprehensive knowledge of HR policies and procedures.
 
 Responsibilities:
-- Answer only HR policy-related questions using the document.
-- No emojis, no fabricated information.
-- If irrelevant → respond: "I'm here to help with HR policy-related questions only."
-- If no info found → say: "Sorry, I couldn't find information related to that in the document."
-- Office timings must include Mon–Thu & Friday.
+- Answer HR-related questions using uploaded documents first, then your general HR knowledge
+- Provide practical, actionable guidance for common HR procedures
+- If documents don't contain the answer, use your HR expertise to help with HR-related queries
+- Maintain conversation context and reference previous interactions when relevant
+- No emojis, maintain professional tone
+- If completely unrelated to HR: "I'm here to help with HR-related questions only."
+- Office timings must include Mon–Thu & Friday details when relevant
+
+Guidelines for unseen queries:
+- For procedural questions (how to apply, submit, request): Provide step-by-step guidance
+- For policy questions: Explain standard HR practices and procedures
+- For specific company details: If not in documents, provide general HR guidelines
+- Always consider conversation history for context and follow-ups
 
 ---
 
@@ -76,9 +103,9 @@ Conversation History:
 
 ---
 
-HR Policy Document:
+HR Policy Document (Uploaded):
 {context_text}
-
+{hr_knowledge_text}
 ---
 
 User Question:
@@ -86,25 +113,46 @@ User Question:
 
 ---
 
-Answer (based strictly on the document):
+Answer (using documents, HR knowledge, and conversation context):
 """
-
-    try:
-        model = genai.GenerativeModel(model_name=model_name)
-        response = model.generate_content(
-            prompt,
-            generation_config={"temperature": 0.3, "max_output_tokens": 400}
-        )
-        return response.text.strip()
-
-    except Exception as e:
-        error_str = str(e)
-        if "429" in error_str or "quota" in error_str.lower():
-            return (
-                "The chatbot has reached the usage limit for this Gemini API key.\n\n"
-                "Please wait a few minutes or use a different API key."
+    
+    for attempt in range(max_retries):
+        try:
+            model = genai.GenerativeModel(model_name=model_name)
+            response = model.generate_content(
+                prompt,
+                generation_config={"temperature": 0.3, "max_output_tokens": 400}
             )
-        return f"An unexpected error occurred: {error_str}"
+            return response.text.strip(), True  # Success
+            
+        except Exception as e:
+            error_str = str(e)
+            print(f"Attempt {attempt + 1}/{max_retries}: {error_str}")
+            
+            # Check if it's a quota/rate limit error
+            if ("429" in error_str or "quota" in error_str.lower() or 
+                "resource has been exhausted" in error_str.lower() or 
+                "rate limit" in error_str.lower()):
+                
+                if attempt < max_retries - 1:
+                    print(f"API quota reached, rotating to next key...")
+                    new_key = rotate_api_key()
+                    genai.configure(api_key=new_key)
+                    time.sleep(2)  # Brief pause before retry
+                    continue
+                else:
+                    return "All API keys have reached their limits. Please try again later.", False
+            else:
+                # Other errors, don't retry with key rotation
+                return f"An unexpected error occurred: {error_str}", False
+    
+    return "Failed after all retry attempts.", False
+
+
+def query_gemini(context_chunks, question, model_name="models/gemini-2.5-flash", chat_history=None, hr_knowledge=None):
+    """Wrapper for backward compatibility"""
+    response, success = query_gemini_with_retry(context_chunks, question, model_name, chat_history, hr_knowledge)
+    return response
 
 
 def classify_and_extract_leave(message: str, model_name="models/gemini-2.5-flash"):

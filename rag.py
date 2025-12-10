@@ -3,14 +3,17 @@ import uuid
 import fitz  # PyMuPDF
 import pytesseract
 from PIL import Image
+# Point pytesseract to the installed Tesseract binary (adjust path if different)
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 from io import BytesIO
 import multiprocessing
 
 from embedder import model
-from chunking import hybrid_chunk_document, get_avg_tokens_per_chunk
+from chunking import hybrid_chunk_document, get_avg_tokens_per_chunk, chunk_text_token_aware
 from vector_store import add_document_chunks, search_context
 from db import save_document_metadata
 from keyword_search import keyword_search  # <- required for hybrid retrieval
+from multimodal_processor import multimodal_processor
 
 from transformers import BlipProcessor, BlipForConditionalGeneration
 from bs4 import BeautifulSoup
@@ -105,46 +108,79 @@ def extract_text_from_epub(path):
     return "\n".join(texts)
 
 
+def ingest_multimodal_document(file_path):
+    """Ingest an image / video / audio file via the multimodal processor."""
+    print(f"\n🎬 [MULTIMODAL] Processing: {file_path}")
+
+    try:
+        # Let the multimodal processor analyse the media file
+        media_result = multimodal_processor.process_media_file(file_path)
+
+        if "error" in media_result:
+            print(f"❌ Media processing failed: {media_result['error']}")
+            return None, 0, None
+
+        # Turn the structured result into a single text blob we can chunk
+        searchable_content = multimodal_processor.extract_media_content_for_chunking(file_path)
+
+        # For multimodal we already have text, so chunk it directly by tokens
+        doc_id = str(uuid.uuid4())[:8]
+        chunks = chunk_text_token_aware(searchable_content, max_tokens=300, overlap=32)
+        embeddings = embed_chunks_parallel(chunks)
+        add_document_chunks(doc_id, chunks, embeddings)
+        avg_tokens = get_avg_tokens_per_chunk(chunks)
+        save_document_metadata(doc_id, os.path.basename(file_path), avg_tokens)
+
+        print(f"✅ [MULTIMODAL] Indexed {len(chunks)} chunks for {os.path.basename(file_path)}")
+        return len(chunks), avg_tokens, doc_id
+
+    except Exception as e:
+        print(f"❌ [MULTIMODAL] Ingestion failed for {file_path}: {e}")
+        return None, 0, None
+
+
 # --- Document Ingestion Pipeline ---
 def ingest_document(file_path):
     ext = os.path.splitext(file_path)[1].lower()
     combined_text = ""
-
     try:
-        if ext == ".pdf":
+        # Detect file type and route accordingly
+        file_ext = os.path.splitext(file_path)[1].lower()
+
+        # Check if it's a media file first
+        if file_ext in multimodal_processor.supported_image_formats + \
+           multimodal_processor.supported_video_formats + \
+           multimodal_processor.supported_audio_formats:
+            return ingest_multimodal_document(file_path)
+
+        # Otherwise, treat as a regular text document
+        combined_text = ""
+        doc_id = str(uuid.uuid4())[:8]
+
+        # Process based on file extension
+        if file_ext == '.pdf':
             print(" Parsing PDF...")
             from embedder import extract_text as extract_text_pdf
             combined_text += extract_text_pdf(file_path)
             combined_text += "\n\n" + extract_image_text(file_path)
-
-        elif ext == ".docx":
+        elif file_ext == '.docx':
             print(" Parsing DOCX...")
             combined_text += extract_text_from_docx(file_path)
-
-        elif ext == ".pptx":
+        elif file_ext == '.pptx':
             print(" Parsing PPTX...")
             combined_text += extract_text_from_pptx(file_path)
-
-        elif ext == ".html":
+        elif file_ext == '.html':
             print(" Parsing HTML...")
             combined_text += extract_text_from_html(file_path)
-
-        elif ext == ".epub":
+        elif file_ext == '.epub':
             print(" Parsing EPUB...")
             combined_text += extract_text_from_epub(file_path)
-
         else:
-            raise ValueError(f" Unsupported file format: {ext}")
+            raise ValueError(f"Unsupported file type: {file_ext}")
 
-        combined_text = combined_text.strip()
-        if not combined_text:
-            raise ValueError(" No usable content extracted.")
-
-        print(" Chunking document...")
-        chunks = hybrid_chunk_document(file_path)
+        # Chunk and embed (we already have full text, so use token-aware text chunker)
+        chunks = chunk_text_token_aware(combined_text, max_tokens=300, overlap=32)
         embeddings = embed_chunks_parallel(chunks)
-        doc_id = os.path.splitext(os.path.basename(file_path))[0] + "_" + uuid.uuid4().hex[:6]
-
         add_document_chunks(doc_id, chunks, embeddings)
         avg_tokens = get_avg_tokens_per_chunk(chunks)
         save_document_metadata(doc_id, os.path.basename(file_path), avg_tokens)

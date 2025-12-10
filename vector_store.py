@@ -85,6 +85,32 @@ def search_context(query, top_k=8, doc_id=None):
         return []
 
 
+def search_sources(query, top_k=3, doc_id=None):
+    """Return top document IDs (sources) for a query for debugging/traceability."""
+    collection = get_or_create_collection()
+    try:
+        filters = {"doc_id": doc_id} if doc_id else None
+        results = collection.query(
+            query_texts=[query],
+            n_results=top_k,
+            where=filters,
+            include=["metadatas"],
+        )
+        metadatas = results.get("metadatas", [])
+        if not metadatas or not metadatas[0]:
+            return []
+
+        doc_ids = []
+        for meta in metadatas[0]:
+            d = meta.get("doc_id")
+            if d and d not in doc_ids:
+                doc_ids.append(d)
+        return doc_ids
+    except Exception as e:
+        print(f"[❌] Error during source search for query '{query}': {e}")
+        return []
+
+
 def list_documents():
     """
     List all unique document IDs stored in ChromaDB.

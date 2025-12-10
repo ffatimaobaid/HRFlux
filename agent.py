@@ -2,7 +2,10 @@ import logging
 import sys
 from rag import retrieve_context
 from gemini_llm import query_gemini, classify_and_extract_leave, FAQ_QUESTIONS, get_similar_questions
-from db import save_log, get_recent_history
+from db import save_log, get_recent_history, get_document_filenames_by_ids
+from hr_knowledge_base import get_hr_procedure, format_hr_response
+from vector_store import search_sources
+from config import SHOW_SOURCES
 
 # Configure logging
 logging.basicConfig(
@@ -138,43 +141,63 @@ def run_agent(user, question, model_name="models/gemini-1.5-flash", context_chun
         save_log(user, question, answer)
         return answer, []
     
-    # Not a leave request — use provided or retrieved document context
+    # Not a leave request — use hybrid approach (documents + HR knowledge)
     if context_chunks is None:
         context_chunks = retrieve_context(question)
+    
+    # Check for HR procedure matches first
+    hr_matches = get_hr_procedure(question)
+    hr_knowledge = None
+    if hr_matches:
+        hr_knowledge = format_hr_response(hr_matches)
+        logger.info(f"Found HR knowledge match: {hr_matches[0][0]}")
 
-    if not context_chunks:
-        # Always show suggestions for any unanswered question
-        answer = (
-            "Sorry, I couldn't find information related to that in the document.\n\nDid you mean:"
-        )
-        similar = get_similar_questions(question, FAQ_QUESTIONS, top_n=3)
+    # If no document context found, but we have HR knowledge, use that
+    if not context_chunks and hr_knowledge:
+        answer = query_gemini([], question, model_name, chat_history, hr_knowledge)
+
+        # Optionally append sources (based on retrieval only)
+        if SHOW_SOURCES:
+            doc_ids = search_sources(question, top_k=3)
+            filenames = get_document_filenames_by_ids(doc_ids)
+            if filenames:
+                answer += "\n\nSources: " + ", ".join(filenames)
+
         save_log(user, question, answer)
-        return answer, similar
+        return answer, []
+    
+    # If we have document context, try with both, let LLM handle unseen queries
+    if context_chunks:
+        answer = query_gemini(context_chunks, question, model_name, chat_history, hr_knowledge)
 
-    # Extract only text if context is in (text, score) form
-    context_texts = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in context_chunks]
-    answer = query_gemini(context_texts, question, model_name, chat_history)
+        # Optionally append sources based on vector search
+        if SHOW_SOURCES:
+            doc_ids = search_sources(question, top_k=3)
+            filenames = get_document_filenames_by_ids(doc_ids)
+            if filenames:
+                answer += "\n\nSources: " + ", ".join(filenames)
+        
+        # Only provide suggestions if the response indicates it's completely unrelated to HR
+        if "I'm here to help with HR-related questions only" in answer:
+            similar = get_similar_questions(question, FAQ_QUESTIONS, top_n=3)
+            save_log(user, question, answer)
+            return answer, similar
 
-    # Check for fallback answers and provide suggestions
-    fallback_phrases = [
-        "I'm here to help with HR policy-related questions only.",
-        "Sorry, I couldn't find information related to that in the document.",
-        "does not specify",
-        "couldn't find",
-        "not available",
-        "no information",
-        "not provided",
-        "not mentioned",
-        "unknown",
-        "not stated",
-        "not clear",
-        "not sure",
-        "unable to find",
-        "no details"
-    ]
-    # Lowercase answer for case-insensitive matching
-    answer_lower = answer.lower()
-    if any(phrase in answer_lower for phrase in fallback_phrases) or len(answer_lower) < 50:
+        save_log(user, question, answer)
+        return answer, []
+
+    # No context found - let LLM handle with conversation context only
+    answer = query_gemini([], question, model_name, chat_history, hr_knowledge)
+
+    # Optionally append sources even if retrieval returned nothing (may still have vector hits)
+    if SHOW_SOURCES:
+        doc_ids = search_sources(question, top_k=3)
+        filenames = get_document_filenames_by_ids(doc_ids)
+        if filenames:
+            answer += "\n\nSources: " + ", ".join(filenames)
+
+    # Only provide suggestions if completely unrelated to HR
+    if "I'm here to help with HR-related questions only" in answer:
         similar = get_similar_questions(question, FAQ_QUESTIONS, top_n=3)
         save_log(user, question, answer)
         return answer, similar

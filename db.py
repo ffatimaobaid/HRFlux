@@ -100,6 +100,25 @@ def get_all_documents():
     return rows
 
 
+def get_document_filenames_by_ids(doc_ids):
+    """Return filenames for a list of document IDs (for debug/source display)."""
+    if not doc_ids:
+        return []
+
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    try:
+        placeholders = ",".join(["?"] * len(doc_ids))
+        c.execute(f"SELECT id, filename FROM documents WHERE id IN ({placeholders})", doc_ids)
+        rows = c.fetchall()
+    finally:
+        conn.close()
+
+    id_to_name = {doc_id: filename for doc_id, filename in rows}
+    # Preserve input order, fall back to doc_id if filename missing
+    return [id_to_name.get(d, d) for d in doc_ids]
+
+
 def add_document_chunks(doc_id, chunks, embeddings=None):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
