@@ -54,7 +54,7 @@ logs/
 .env.production.local
 
 # API Keys and Secrets
-config.py
+# config.py  # (re-enabled for private repo sharing)
 *.key
 *.pem
 secrets.json
