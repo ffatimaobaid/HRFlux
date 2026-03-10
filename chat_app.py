@@ -8,61 +8,224 @@ import datetime
 import traceback
 import re
 
-HR_SYNONYMS = {
-    "leave": ["vacation", "absence", "time off", "holiday"],
-    "absent": ["not present", "missing", "away"],
-    "policy": ["rule", "guideline", "regulation"],
-    "salary": ["pay", "wage", "compensation"],
-    "late": ["tardy", "delayed", "not on time"],
-    "gift": ["present", "reward", "incentive"],
-    # Add more as needed
-}
+st.set_page_config(page_title="HR Chatbot", layout="centered")
 
-def expand_query_with_synonyms(query):
-    expanded = [query]
-    for word, synonyms in HR_SYNONYMS.items():
-        if re.search(rf"\b{word}\b", query, re.IGNORECASE):
-            for syn in synonyms:
-                # Replace the word with the synonym in the query
-                expanded.append(re.sub(rf"\b{word}\b", syn, query, flags=re.IGNORECASE))
-    return expanded
+@st.cache_data(ttl=3600*24)
+def generate_alternative_queries(query):
+    """
+    Generate alternative search queries using Gemini to improve hybrid retrieval.
+    This replaces hardcoded synonym dictionaries.
+    """
+    from gemini_llm import query_gemini
+    try:
+        # We ask Gemini to rewrite the query using standard HR terminology
+        prompt = (
+            f"Generate 3 alternative search queries for the user question: '{query}'. "
+            "Use standard HR terminology and synonyms. "
+            "Output only the 3 alternatives separated by pipes (|). No other text."
+        )
+        # Use a fast model if possible to avoid latency
+        response = query_gemini([], prompt)
+        
+        # Parse response
+        # Expected format: "Alternative 1 | Alternative 2 | Alternative 3"
+        alternatives = [alt.strip() for alt in response.split('|') if alt.strip()]
+        
+        # Ensure we don't have duplicates or empty strings
+        unique_alts = list(set([query] + alternatives))
+        return unique_alts
+        
+    except Exception as e:
+        print(f"Error generating alternative queries: {e}")
+        return [query]
 
 # Initialize DB and user table
 init_db()
 init_user_table()
 cleanup_old_sessions(retention_hours=24)
 
+# Global styles: custom CSS + Bootstrap
+try:
+    with open("styles/welcome.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+except FileNotFoundError:
+    pass
+
+try:
+    with open("styles/login.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+except FileNotFoundError:
+    pass
+
+try:
+    with open("styles/chat.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+except FileNotFoundError:
+    pass
+
+st.markdown(
+    """
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    """,
+    unsafe_allow_html=True,
+)
+
+if "welcome_done" not in st.session_state:
+    st.session_state.welcome_done = False
+
+if not st.session_state.welcome_done:
+    try:
+        with open("templates/welcome.html", "r", encoding="utf-8") as f:
+            welcome_html = f.read()
+    except FileNotFoundError:
+        welcome_html = ""
+
+    if welcome_html:
+        st.markdown(welcome_html, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("Continue", use_container_width=True):
+            st.session_state.welcome_done = True
+            st.rerun()
+
+    st.stop()
+
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
+if "show_signup" not in st.session_state:
+    st.session_state.show_signup = False
+
 if not st.session_state.logged_in:
-    st.title("Login or Signup")
-    tab1, tab2 = st.tabs(["Login", "Signup"])
+    # Two-column layout styled via styles/login.css
+    st.markdown('<div class="login-page"><div class="login-card">', unsafe_allow_html=True)
+    col_left, col_right = st.columns([3, 2])
 
-    with tab1:
-        login_user_input = st.text_input("Username", key="login_user")
-        login_pass_input = st.text_input("Password", type="password", key="login_pass")
-        if st.button("Login"):
-            if login_user(login_user_input, login_pass_input):
-                st.session_state.logged_in = True
-                st.session_state.user = login_user_input
-                st.success("Logged in!")
+    # LOGIN VIEW
+    if not st.session_state.show_signup:
+        with col_left:
+            st.markdown(
+                """
+                <div class="login-left-header">
+                  <div class="login-logo-mark">
+                    <img src="https://dummyimage.com/120x60/000/fff&text=HRFLUX" alt="HRFLUX logo" />
+                    <p class="login-logo-text">HRFLUX</p>
+                  </div>
+                  <h2 class="login-heading">Welcome back</h2>
+                  <p class="login-subtext">AI-powered HR assistant, tailored to your workplace.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            st.markdown('<p class="login-field-label">Email</p>', unsafe_allow_html=True)
+            login_user_input = st.text_input("Email", key="login_user", placeholder="Enter your email")
+
+            st.markdown('<p class="login-field-label">Password</p>', unsafe_allow_html=True)
+            login_pass_input = st.text_input(
+                "Password",
+                type="password",
+                key="login_pass",
+                placeholder="Enter your password",
+            )
+
+            st.markdown('<p class="login-forgot"><span>Forgot your password?</span></p>', unsafe_allow_html=True)
+
+            if st.button("Login"):
+                if login_user(login_user_input, login_pass_input):
+                    st.session_state.logged_in = True
+                    st.session_state.user = login_user_input
+                    st.success("Logged in!")
+                    st.rerun()
+                else:
+                    st.error("Invalid username or password.")
+
+            if st.button("Don't have an account? Sign Up", key="go_to_signup"):
+                st.session_state.show_signup = True
                 st.rerun()
-            else:
-                st.error("Invalid username or password.")
 
-    with tab2:
-        signup_user_input = st.text_input("New Username", key="signup_user")
-        signup_pass_input = st.text_input("New Password", type="password", key="signup_pass")
-        if st.button("Signup"):
-            if signup_user(signup_user_input, signup_pass_input):
-                st.success("Signup successful! Please login.")
-            else:
-                st.error("Username already exists.")
+        with col_right:
+            st.markdown(
+                """
+                <div class="login-right-card">
+                  <div class="login-hero-icon">🤖</div>
+                  <h3>AI-Powered HR Tailored for You.</h3>
+                  <p>Get instant answers to HR questions, policies, and workplace queries.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    # SIGNUP VIEW
+    else:
+        with col_left:
+            st.markdown(
+                """
+                <div class="login-left-header">
+                  <div class="login-logo-mark">
+                    <img src="https://dummyimage.com/120x60/000/fff&text=HRFLUX" alt="HRFLUX logo" />
+                    <p class="login-logo-text">HRFLUX</p>
+                  </div>
+                  <h2 class="login-heading">Create your account</h2>
+                  <p class="login-subtext">Sign up to start using your AI-powered HR assistant.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            st.markdown('<p class="login-field-label">New Username</p>', unsafe_allow_html=True)
+            signup_user_input = st.text_input("New Username", key="signup_user")
+
+            st.markdown('<p class="login-field-label">New Password</p>', unsafe_allow_html=True)
+            signup_pass_input = st.text_input("New Password", type="password", key="signup_pass")
+
+            if st.button("Create account"):
+                if signup_user(signup_user_input, signup_pass_input):
+                    st.success("Signup successful! Please login.")
+                    st.session_state.show_signup = False
+                    st.rerun()
+                else:
+                    st.error("Username already exists.")
+
+            if st.button("Already have an account? Login", key="back_to_login"):
+                st.session_state.show_signup = False
+                st.rerun()
+
+        with col_right:
+            st.markdown(
+                """
+                <div class="login-right-card">
+                  <div class="login-hero-icon">👥</div>
+                  <h3>Welcome to HRFLUX.</h3>
+                  <p>Create your account to personalize your HR experience.</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
     st.stop()
 else:
     user = st.session_state.user
-    st.set_page_config(page_title="HR Chatbot", layout="centered")
+
+    # Full-screen purple background, simple layout
+    st.markdown(
+        """
+        <style>
+        .stApp {
+            background: #e3e6ff;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.title("HR Assistant Chatbot")
 
     # Load selected model silently
@@ -120,7 +283,12 @@ else:
             q, a = st.session_state.chat_history[i]
             st.session_state.chat_history[i] = (q, a, [])
 
-    for q, a, suggestions in st.session_state.chat_history:
+    for chat_entry in st.session_state.chat_history:
+        if len(chat_entry) == 3:
+            q, a, suggestions = chat_entry
+        else:
+            q, a = chat_entry
+            suggestions = []
         print("Rendering suggestions in chat history:", suggestions)
         with st.chat_message("user"):
             st.markdown(q)

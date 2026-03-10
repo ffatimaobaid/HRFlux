@@ -103,9 +103,26 @@ def create_enhanced_schema():
         )
     """)
     
+    # ========== CHAT ESCALATIONS TABLE (New) ==========
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS chat_escalations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            employee_id TEXT,
+            username TEXT,
+            query TEXT,
+            full_history TEXT,
+            reason TEXT,
+            sensitivity_score REAL,
+            status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'resolved', 'cancelled')),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            resolved_at DATETIME,
+            resolution_notes TEXT
+        )
+    """)
+    
     conn.commit()
     conn.close()
-    print("✅ Enhanced database schema created successfully!")
+    print("Enhanced database schema created successfully!")
 
 
 def migrate_existing_data():
@@ -133,7 +150,7 @@ def migrate_existing_data():
                     date('now')
                 FROM users
             """)
-            print("✅ Migrated users to employees table")
+            print("Migrated users to employees table")
         
         # Check if old leave_requests table exists
         c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='leave_requests'")
@@ -157,11 +174,11 @@ def migrate_existing_data():
                 FROM leave_requests lr
                 WHERE EXISTS (SELECT 1 FROM employees WHERE username = lr.user)
             """)
-            print("✅ Migrated leave requests to enhanced table")
+            print("Migrated leave requests to enhanced table")
         
         conn.commit()
     except Exception as e:
-        print(f"⚠️ Migration warning: {e}")
+        print(f"Migration warning: {e}")
         conn.rollback()
     finally:
         conn.close()
@@ -185,7 +202,7 @@ def add_employee(employee_id, username, password, full_name, email, department,
         conn.commit()
         return True
     except sqlite3.IntegrityError as e:
-        print(f"❌ Error adding employee: {e}")
+        print(f"Error adding employee: {e}")
         return False
     finally:
         conn.close()
@@ -270,7 +287,7 @@ def update_leave_balance(employee_id, leave_type, new_balance, reason=None, requ
         conn.commit()
         return True
     except Exception as e:
-        print(f"❌ Error updating leave balance: {e}")
+        print(f"Error updating leave balance: {e}")
         conn.rollback()
         return False
     finally:
@@ -296,8 +313,8 @@ def get_all_employees():
 
 
 if __name__ == "__main__":
-    print("🔧 Creating enhanced database schema...")
+    print("Creating enhanced database schema...")
     create_enhanced_schema()
-    print("🔄 Migrating existing data...")
+    print("Migrating existing data...")
     migrate_existing_data()
-    print("✅ Database setup complete!")
+    print("Database setup complete!")

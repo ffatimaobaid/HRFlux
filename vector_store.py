@@ -3,17 +3,31 @@ import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 from transformers import AutoTokenizer
 
-# ChromaDB setup
+# ChromaDB setup - lazy initialization
 chroma_path = "chroma_storage"
-embedding_func = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
-client = chromadb.PersistentClient(path=chroma_path)
-
-# Optional: Tokenizer for performance-optimized token counting
-tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+embedding_func = None
+client = None
+tokenizer = None
 _token_cache = {}
+
+def _init_chromadb():
+    """Lazy initialization of ChromaDB to avoid issues during import."""
+    global client, embedding_func, tokenizer
+    if client is None:
+        try:
+            embedding_func = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+            client = chromadb.PersistentClient(path=chroma_path)
+            tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+        except Exception as e:
+            print(f"Warning: ChromaDB initialization failed: {e}")
+            # Create a mock client for testing
+            pass
 
 def get_or_create_collection(name="hr_docs"):
     """Fetch or create a ChromaDB collection for HR documents."""
+    _init_chromadb()
+    if client is None:
+        raise RuntimeError("ChromaDB client not initialized")
     return client.get_or_create_collection(name=name, embedding_function=embedding_func)
 
 def add_document_chunks(doc_id, chunks, embeddings=None):
@@ -72,12 +86,17 @@ def search_context(query, top_k=8, doc_id=None):
     """
     collection = get_or_create_collection()
     try:
-        filters = {"doc_id": doc_id} if doc_id else None
-        results = collection.query(
-            query_texts=[query],
-            n_results=top_k,
-            where=filters
-        )
+        if doc_id:
+            results = collection.query(
+                query_texts=[query],
+                n_results=top_k,
+                where={"doc_id": doc_id}
+            )
+        else:
+            results = collection.query(
+                query_texts=[query],
+                n_results=top_k
+            )
         documents = results.get("documents", [])
         return documents[0] if documents and len(documents[0]) > 0 else []
     except Exception as e:
@@ -139,6 +158,11 @@ def get_avg_tokens_per_chunk(chunks):
     """
     if not chunks:
         return 0
+
+    _init_chromadb()
+    if tokenizer is None:
+        # Fallback: estimate tokens as ~4 characters per token
+        return sum(len(chunk) / 4 for chunk in chunks) / len(chunks)
 
     total_tokens = 0
     for chunk in chunks:

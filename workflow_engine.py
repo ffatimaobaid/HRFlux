@@ -413,3 +413,135 @@ def get_employee_leave_history(employee_id, limit=10):
     history = c.fetchall()
     conn.close()
     return history
+
+
+class ChatEscalationEngine:
+    """
+    Manages escalations for sensitive or unresolved chat queries.
+    """
+    
+    @staticmethod
+    def submit_chat_escalation(username, query, full_history, reason, sensitivity_score=0.0):
+        """
+        Escalate a chat query to HR.
+        """
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        try:
+            # Get employee_id if exists
+            c.execute("SELECT employee_id FROM employees WHERE username = ?", (username,))
+            res = c.fetchone()
+            employee_id = res[0] if res else None
+            
+            # Format history as string if list
+            if isinstance(full_history, list):
+                # Handle tuples (query, answer, suggestions) or (query, answer)
+                formatted_history = []
+                for item in full_history:
+                    q = item[0]
+                    a = item[1]
+                    formatted_history.append(f"User: {q}\\nAI: {a}")
+                history_str = "\\n".join(formatted_history)
+            else:
+                history_str = str(full_history)
+
+            c.execute("""
+                INSERT INTO chat_escalations 
+                (employee_id, username, query, full_history, reason, sensitivity_score, status)
+                VALUES (?, ?, ?, ?, ?, ?, 'pending')
+            """, (employee_id, username, query, history_str, reason, sensitivity_score))
+            
+            escalation_id = c.lastrowid
+            conn.commit()
+            
+            return {
+                'success': True,
+                'message': 'Query escalated to HR successfully',
+                'escalation_id': escalation_id
+            }
+            
+        except Exception as e:
+            conn.rollback()
+            return {'success': False, 'message': f'Error escalating query: {str(e)}'}
+        finally:
+            conn.close()
+
+    @staticmethod
+    def get_pending_escalations():
+        """Get all pending chat escalations."""
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        c.execute("""
+            SELECT * FROM chat_escalations 
+            WHERE status = 'pending' 
+            ORDER BY created_at DESC
+        """)
+        
+        rows = c.fetchall()
+        conn.close()
+        
+        escalations = []
+        columns = ['id', 'employee_id', 'username', 'query', 'full_history', 'reason', 
+                  'sensitivity_score', 'status', 'created_at', 'resolved_at', 'resolution_notes']
+        
+        for row in rows:
+            escalations.append(dict(zip(columns, row)))
+            
+        return escalations
+
+    @staticmethod
+    def resolve_escalation(escalation_id, resolution_notes):
+        """Resolve a chat escalation."""
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        try:
+            c.execute("""
+                UPDATE chat_escalations
+                SET status = 'resolved',
+                    resolved_at = ?,
+                    resolution_notes = ?
+                WHERE id = ?
+            """, (datetime.now().isoformat(), resolution_notes, escalation_id))
+            
+            if c.rowcount == 0:
+                return {'success': False, 'message': 'Escalation not found'}
+                
+            conn.commit()
+            return {'success': True, 'message': 'Escalation resolved'}
+            
+        except Exception as e:
+            conn.rollback()
+            return {'success': False, 'message': f'Error resolving: {str(e)}'}
+        finally:
+            conn.close()
+
+    @staticmethod
+    def get_user_escalations(username, limit=5):
+        """Get recent escalations for a specific user."""
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        c.execute("""
+            SELECT reason, status, resolution_notes, created_at, resolved_at 
+            FROM chat_escalations 
+            WHERE username = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+        """, (username, limit))
+        
+        rows = c.fetchall()
+        conn.close()
+        
+        history = []
+        for r in rows:
+            history.append({
+                'reason': r[0],
+                'status': r[1],
+                'resolution_notes': r[2],
+                'date': r[3],
+                'resolved_at': r[4]
+            })
+        return history

@@ -1,6 +1,6 @@
 # Core dependencies
 streamlit
-google-generativeai
+google-generativeai==0.8.3
 chromadb
 sentence-transformers
 tiktoken
@@ -9,6 +9,10 @@ pymupdf
 nltk
 pandas
 pdf2image
+unstructured
+langchain-core
+langgraph
+langchain-google-genai
 
 # FastAPI and workflow engine
 fastapi

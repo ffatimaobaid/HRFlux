@@ -225,3 +225,34 @@ def retrieve_context(query, top_k=5):
         print(f"[RAG] Returning {len(combined[:top_k])} hybrid context chunks.")
 
     return combined[:top_k]
+
+
+def process_rag_query(query):
+    """
+    Process a RAG query by retrieving context and generating a response.
+    
+    Args:
+        query (str): User query
+        
+    Returns:
+        str: Generated response based on retrieved context
+    """
+    import gemini_llm
+    
+    # Retrieve relevant context
+    context = retrieve_context(query, top_k=5)
+    
+    # If no context found, return a fallback response
+    if not context:
+        return "I don't have specific information about that query. Please contact HR for details."
+    
+    # Combine context into a single string
+    context_text = "\n\n".join(context)
+    
+    # Generate response using LLM
+    try:
+        response = gemini_llm.query_gemini([context_text], query)
+        return response
+    except Exception as e:
+        print(f"Error processing RAG query: {e}")
+        return "I encountered an error while processing your query. Please try again or contact HR."

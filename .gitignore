@@ -27,6 +27,7 @@ venv/
 myenv/
 ENV/
 env/
+env2/
 .env
 .venv
 env.bak/

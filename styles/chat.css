@@ -1,0 +1,176 @@
+.chat-page {
+  min-height: 100vh;
+  background: #e3e6ff;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.chat-shell {
+  width: 100%;
+  max-width: 1200px;
+  background: #f9fafb;
+  border-radius: 24px;
+  display: flex;
+  overflow: hidden;
+  box-shadow: 0 22px 45px rgba(15, 23, 42, 0.18);
+}
+
+.chat-sidebar {
+  width: 72px;
+  background: #c7cffd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0;
+  gap: 24px;
+}
+
+.chat-sidebar-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 16px;
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.chat-sidebar-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.chat-sidebar-icon:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.chat-main {
+  flex: 1;
+  padding: 24px 32px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: #e3e6ff;
+}
+
+.chat-conversation {
+  flex: 1;
+  margin-top: 8px;
+  background: #f9fafb;
+  border-radius: 18px;
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+
+.chat-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.chat-greeting h1 {
+  font-size: 24px;
+  margin: 0;
+}
+
+.chat-greeting h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 4px 0 0 0;
+}
+
+.chat-search {
+  flex: 0 0 320px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-search-input {
+  flex: 1;
+  background: #f9fafb;
+  border-radius: 999px;
+  padding: 8px 16px;
+  border: none;
+  font-size: 13px;
+}
+
+.chat-search-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-cards-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.chat-card {
+  flex: 1 1 220px;
+  min-width: 220px;
+  max-width: 260px;
+  background: #f9fafb;
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+
+.chat-card h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.chat-card p {
+  font-size: 12px;
+  margin: 0;
+  color: #4b5563;
+}
+
+.chat-bottom-hint {
+  margin-top: 8px;
+  padding-top: 4px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* Make Streamlit chat input look like the bottom bar */
+.stChatInput > div {
+  background: #f9fafb;
+  border-radius: 999px;
+}
+
+.stChatInput textarea {
+  border-radius: 999px !important;
+}
+
+@media (max-width: 900px) {
+  .chat-page {
+    padding: 12px;
+  }
+
+  .chat-shell {
+    flex-direction: column;
+  }
+
+  .chat-sidebar {
+    flex-direction: row;
+    width: 100%;
+    justify-content: center;
+  }
+}

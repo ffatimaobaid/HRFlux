@@ -1,7 +1,7 @@
 import logging
 import sys
 from rag import retrieve_context
-from gemini_llm import query_gemini, classify_and_extract_leave, FAQ_QUESTIONS, get_similar_questions
+from gemini_llm import query_gemini, FAQ_QUESTIONS, get_similar_questions
 from db import save_log, get_recent_history, get_document_filenames_by_ids
 from hr_knowledge_base import get_hr_procedure, format_hr_response
 from vector_store import search_sources
@@ -58,7 +58,7 @@ def format_leave_balance_response(balances):
 
 # Import new workflow engine and database functions
 try:
-    from workflow_engine import LeaveWorkflowEngine
+    from workflow_engine import LeaveWorkflowEngine, ChatEscalationEngine
     from db_schema_v2 import get_employee, get_leave_balance
     WORKFLOW_ENGINE_AVAILABLE = True
 except ImportError:
@@ -69,169 +69,99 @@ def run_agent(user, question, model_name="models/gemini-1.5-flash", context_chun
     # Get recent chat history for conversation continuity
     chat_history = get_recent_history(user)
 
-    # Use Gemini to classify and extract intent + leave info
-    intent_result = classify_and_extract_leave(question, model_name)
-    print(f"DEBUG: Intent Result: {intent_result}")
-    sys.stdout.flush()
-
-    if intent_result.get("is_leave_request", False):
-        start = normalize_date(intent_result.get("start_date"))
-        end = normalize_date(intent_result.get("end_date"))
-        leave_type = intent_result.get("leave_type", "casual").lower()
-        reason = intent_result.get("reason") or question
-
-        if start and end:
-            # Use workflow engine if available
-            if WORKFLOW_ENGINE_AVAILABLE:
-                # Get employee by username
-                employee = get_employee(username=user)
-                if employee:
-                    employee_id = employee['employee_id']
-                    
-                    # Submit through workflow engine
-                    result = LeaveWorkflowEngine.submit_leave_request(
-                        employee_id=employee_id,
-                        leave_type=leave_type,
-                        start_date=start,
-                        end_date=end,
-                        reason=reason
-                    )
-                    
-                    if result['success']:
-                        # Get updated balance
-                        balances = get_leave_balance(employee_id)
-                        answer = f"{result['message']}\n\nYour current leave balances:\n" + \
-                                f"• Casual: {balances['casual']} days\n" + \
-                                f"• Sick: {balances['sick']} days\n" + \
-                                f"• Annual: {balances['annual']} days"
-                    else:
-                        answer = f"❌ {result['message']}"
-                else:
-                    answer = "Could not find your employee record. Please contact HR."
-            else:
-                # Fallback to old method
-                from db import save_leave_request
-                save_leave_request(user, leave_type, start, end, reason)
-                answer = f"Your leave request from {start} to {end} has been submitted."
-            
-            save_log(user, question, answer)
-            return answer, []
-        else:
-            # Let Gemini respond naturally when dates are unclear
-            context = retrieve_context("how to apply for leave or mention correct format")
-            # Extract only text from context tuples
-            context_texts = [chunk[0] if isinstance(chunk, tuple) else chunk for chunk in context]
-            answer = query_gemini(context_texts, question, model_name, chat_history)
-            save_log(user, question, answer)
-            return answer, []
-
-    # Check if asking about leave balance
-    if any(keyword in question.lower() for keyword in ['leave balance', 'how many leaves', 'remaining leaves', 'available leaves']):
-        logger.info(f"Processing leave balance request from user: {user}")
+    # --- STATUS CHECK INTENT DETECTION ---
+    status_keywords = ["status", "approved", "rejected", "application", "request", "ticket", "complaint", "what happened", "my leave", "update on"]
+    if any(k in question.lower() for k in status_keywords):
+        logger.info(f"Status check detected for user: {user}")
+        user_status_context = "User's Recent Activity Status:\n"
         
-        # Try with workflow engine first
         if WORKFLOW_ENGINE_AVAILABLE:
-            logger.info("Workflow engine is available, attempting to fetch leave balance...")
+            # 1. Fetch Leave Requests
             try:
-                employee = get_employee(username=user)
-                if employee:
-                    logger.info(f"Found employee: {employee}")
-                    balances = get_leave_balance(employee['employee_id'])
-                    logger.info(f"Retrieved leave balances: {balances}")
-                    if balances:
-                        answer = format_leave_balance_response(balances)
-                        save_log(user, question, answer)
-                        return answer, []
+                # We need to get employee_id first
+                emp = get_employee(username=user)
+                if emp:
+                    # workflow_engine doesn't have a direct 'get_history' by id exposed as static, 
+                    # but checks 'get_employee_leave_history' at module level
+                    from workflow_engine import get_employee_leave_history
+                    leaves = get_employee_leave_history(emp['employee_id'], limit=3)
+                    if leaves:
+                        user_status_context += "\nRecent Leave Requests:\n"
+                        for l in leaves:
+                            # l: id, emp_id, type, start, end, days, reason, status, approver, approved_at, comments, ...
+                            lid, ltype, start, end, status, comments = l[0], l[2], l[3], l[4], l[7], l[10]
+                            user_status_context += f"- Leave ({ltype}) from {start} to {end}: {status.upper()}"
+                            if status in ['approved', 'rejected'] and comments:
+                                user_status_context += f" (Admin Note: {comments})"
+                            user_status_context += "\n"
                     else:
-                        logger.warning("No leave balances found for employee")
-                else:
-                    logger.warning(f"No employee found with username: {user}")
+                        user_status_context += "\nNo recent leave requests found.\n"
             except Exception as e:
-                logger.error(f"Error in workflow engine leave balance check: {str(e)}", exc_info=True)
+                logger.error(f"Error fetching leave status: {e}")
+
+            # 2. Fetch Escalations
+            try:
+                escalations = ChatEscalationEngine.get_user_escalations(user, limit=3)
+                if escalations:
+                    user_status_context += "\nRecent Support Escalations:\n"
+                    for esc in escalations:
+                        # esc: reason, status, resolution_notes, date, resolved_at
+                        user_status_context += f"- Ticket ({esc['reason']}): {esc['status'].upper()}"
+                        if esc['status'] == 'resolved' and esc['resolution_notes']:
+                            user_status_context += f" (Resolution: {esc['resolution_notes']})"
+                        user_status_context += "\n"
+                else:
+                    user_status_context += "\nNo recent escalations found.\n"
+            except Exception as e:
+                logger.error(f"Error fetching escalation status: {e}")
         
-        # Fallback to direct database query
-        logger.info("Attempting direct database query...")
-        try:
-            from db import get_leave_balance as get_legacy_leave_balance
-            logger.info(f"Calling get_legacy_leave_balance for user: {user}")
-            balances = get_legacy_leave_balance(user)
-            logger.info(f"Direct query result: {balances}")
+        # Inject this context into the chunks
+        if context_chunks is None:
+            context_chunks = []
+        context_chunks.append(user_status_context)
+        print(f"DEBUG: Injected Status Context:\n{user_status_context}")
+
+
+    # ===== NEW LANGGRAPH LOGIC START =====
+    from supervisor_workflow import hrflux_agent
+    from langchain_core.messages import HumanMessage, AIMessage
+    
+    # Build history_str for prompt injection
+    history_str = ""
+    if chat_history:
+        formatted = [f"User: {q}\nAI: {a}" for q, a in chat_history[-5:] if q and a and q.strip() and a.strip()]
+        if formatted:
+            history_str = "\n".join(formatted)
+        else:
+            history_str = "No prior exchanges."
             
-            if balances:
-                answer = format_leave_balance_response(balances)
-                save_log(user, question, answer)
-                return answer, []
-            else:
-                logger.warning("No leave balances found in direct query")
-                answer = "I couldn't find your leave balance. Please contact HR to check your leave balance."
-                
-        except Exception as e:
-            logger.error(f"Error in direct leave balance query: {str(e)}", exc_info=True)
-            answer = "I encountered an error while fetching your leave balance. Please try again later or contact HR."
-        
-        save_log(user, question, answer)
-        return answer, []
-    
-    # Not a leave request — use hybrid approach (documents + HR knowledge)
-    if context_chunks is None:
-        context_chunks = retrieve_context(question)
-    
-    # Check for HR procedure matches first
-    hr_matches = get_hr_procedure(question)
-    hr_knowledge = None
-    if hr_matches:
-        hr_knowledge = format_hr_response(hr_matches)
-        logger.info(f"Found HR knowledge match: {hr_matches[0][0]}")
-
-    # If no document context found, but we have HR knowledge, use that
-    if not context_chunks and hr_knowledge:
-        answer = query_gemini([], question, model_name, chat_history, hr_knowledge)
-
-        # Optionally append sources (based on retrieval only)
-        if SHOW_SOURCES:
-            doc_ids = search_sources(question, top_k=3)
-            filenames = get_document_filenames_by_ids(doc_ids)
-            if filenames:
-                answer += "\n\nSources: " + ", ".join(filenames)
-
-        save_log(user, question, answer)
-        return answer, []
-    
-    # If we have document context, try with both, let LLM handle unseen queries
+    # Combine status context with question if available
     if context_chunks:
-        answer = query_gemini(context_chunks, question, model_name, chat_history, hr_knowledge)
-
-        # Optionally append sources based on vector search
-        if SHOW_SOURCES:
-            doc_ids = search_sources(question, top_k=3)
-            filenames = get_document_filenames_by_ids(doc_ids)
-            if filenames:
-                answer += "\n\nSources: " + ", ".join(filenames)
+        question_with_context = f"Internal Context (Status/History):\n{chr(10).join(context_chunks)}\n\nUser Question:\n{question}"
+    else:
+        question_with_context = question
         
-        # Only provide suggestions if the response indicates it's completely unrelated to HR
-        if "I'm here to help with HR-related questions only" in answer:
-            similar = get_similar_questions(question, FAQ_QUESTIONS, top_n=3)
-            save_log(user, question, answer)
-            return answer, similar
-
-        save_log(user, question, answer)
-        return answer, []
-
-    # No context found - let LLM handle with conversation context only
-    answer = query_gemini([], question, model_name, chat_history, hr_knowledge)
-
-    # Optionally append sources even if retrieval returned nothing (may still have vector hits)
-    if SHOW_SOURCES:
-        doc_ids = search_sources(question, top_k=3)
-        filenames = get_document_filenames_by_ids(doc_ids)
-        if filenames:
-            answer += "\n\nSources: " + ", ".join(filenames)
-
-    # Only provide suggestions if completely unrelated to HR
-    if "I'm here to help with HR-related questions only" in answer:
-        similar = get_similar_questions(question, FAQ_QUESTIONS, top_n=3)
-        save_log(user, question, answer)
-        return answer, similar
-
+    state = {
+        "messages": [HumanMessage(content=question_with_context)],
+        "username": user,
+        "chat_history_str": history_str,
+    }
+    
+    logger.info(f"Invoking hrflux_agent for user {user}")
+    try:
+        result = hrflux_agent.invoke(state)
+        answer = result["messages"][-1].content
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        logger.error(f"Error invoking hrflux_agent: {e}")
+        answer = "I'm sorry, an internal error occurred while processing your request."
+        
+    suggestions = []
+    if "I'm here to help with HR-related" in answer or "completely unrelated" in answer:
+        from gemini_llm import get_similar_questions, FAQ_QUESTIONS
+        suggestions = get_similar_questions(question, FAQ_QUESTIONS, top_n=3)
+        
+    from db import save_log
     save_log(user, question, answer)
-    return answer, []
+    return answer, suggestions
