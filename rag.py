@@ -227,24 +227,41 @@ def retrieve_context(query, top_k=5):
     return combined[:top_k]
 
 
+def get_layered_context(query, top_k=5):
+    """
+    Implements a Layered Retrieval Strategy:
+    1. Vector Database (Chroma) + Keyword Search
+    2. Fallback to basic_hr_policy.md if nothing is found
+    """
+    # 1. Standard Hybrid Retrieval
+    context = retrieve_context(query, top_k=top_k)
+    
+    # 2. Fallback to basic document
+    if not context:
+        print(f"⚠️ [LayeredRAG] Vector DB returned empty. Falling back to basic_hr_policy.md")
+        try:
+            with open("basic_hr_policy.md", "r", encoding="utf-8") as f:
+                fallback_text = f.read()
+                return [fallback_text]
+        except FileNotFoundError:
+            print("⚠️ [LayeredRAG] Fallback document not found.")
+            return []
+            
+    return context
+
+
 def process_rag_query(query):
     """
     Process a RAG query by retrieving context and generating a response.
-    
-    Args:
-        query (str): User query
-        
-    Returns:
-        str: Generated response based on retrieved context
     """
     import gemini_llm
     
-    # Retrieve relevant context
-    context = retrieve_context(query, top_k=5)
+    # Use Layered Retrieval
+    context = get_layered_context(query, top_k=5)
     
     # If no context found, return a fallback response
     if not context:
-        return "I don't have specific information about that query. Please contact HR for details."
+        return "I don't have specific information about that query in the company policy documents."
     
     # Combine context into a single string
     context_text = "\n\n".join(context)

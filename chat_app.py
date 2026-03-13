@@ -226,7 +226,71 @@ else:
         unsafe_allow_html=True,
     )
 
-    st.title("HR Assistant Chatbot")
+    from db import get_employee_tasks, add_employee_task, update_employee_task_status
+    from db_schema_v2 import get_employee
+    from notification_service import generate_creative_notification
+    
+    employee_data = get_employee(username=user)
+    emp_id = employee_data['employee_id'] if employee_data else None
+    employee_name = employee_data['full_name'] if employee_data else user
+
+    # Top Navigation / Notification Bar
+    nav_col1, nav_col2, nav_col3 = st.columns([6, 1, 1])
+    with nav_col1:
+        st.title("HR Assistant & Productivity Dashboard")
+        
+    with nav_col2:
+        # Notifications Popover
+        pending_tasks = []
+        immediate_tasks = []
+        upcoming_tasks = []
+        if emp_id:
+            all_pending = [t for t in get_employee_tasks(emp_id) if t['status'] == 'pending']
+            
+            import datetime
+            today_str = str(datetime.date.today())
+            
+            # Split tasks
+            for t in all_pending:
+                if t['deadline'] and t['deadline'] <= today_str:
+                    immediate_tasks.append(t)
+                else:
+                    upcoming_tasks.append(t)
+            
+            pending_tasks = all_pending # all of them
+            
+        # The red icon bubble only counts immediate items
+        badge_count = len(immediate_tasks)
+        
+        with st.popover(f"🔔 Notifications ({badge_count})"):
+            if immediate_tasks:
+                st.write("**🚨 Due Today / Overdue:**")
+                for t in immediate_tasks:
+                    st.error(f"- {t['title']} (Due: {t['deadline']})")
+                
+                # Only toast for immediate tasks
+                if "notification_shown" not in st.session_state:
+                    st.session_state.notification_shown = True
+                    notif = generate_creative_notification(employee_name, immediate_tasks)
+                    st.toast(notif, icon="🚨")
+                    st.success(f"**AI Motivation:** {notif}")
+            else:
+                st.write("No tasks due today! 🎉")
+                # Ensure we don't trigger the toast over and over when they have 0
+                st.session_state.notification_shown = True
+
+            if upcoming_tasks:
+                st.write("---")
+                st.write("**📅 Upcoming Tasks:**")
+                # limit to next 5 upcoming
+                for t in upcoming_tasks[:5]:
+                    st.info(f"- {t['title']} (Due: {t['deadline']})")
+                
+    with nav_col3:
+        if st.button("Clear Chat", help="Clear conversation history"):
+            st.session_state.chat_history = []
+            delete_user_history(user)
+            st.rerun()
 
     # Load selected model silently
     model = "models/gemini-1.5-flash"
@@ -238,15 +302,18 @@ else:
             except json.JSONDecodeError:
                 pass
 
-    # Clear chat button (UI + DB)
-    if st.button("Clear Chat"):
-        st.session_state.chat_history = []
-        delete_user_history(user)  # ✅ Clear from DB
-        st.rerun()
+    # Main Dashboard Layout
+    main_col1, main_col2 = st.columns([1.2, 1])
 
-    # Load previous chat history from DB into session state
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = get_recent_history(user)
+    with main_col1:
+        st.subheader("🤖 Chat Assistant")
+        
+        # Chat history container
+        chat_container = st.container(height=500)
+        
+        # Load previous chat history from DB into session state
+        if "chat_history" not in st.session_state:
+            st.session_state.chat_history = get_recent_history(user)
 
     # Input box for new user question
     # Check for a pending question from a suggestion button
@@ -278,57 +345,121 @@ else:
 
     # Render all previous chat messages
     # Ensure all chat history entries have 3 elements (q, a, suggestions)
-    for i in range(len(st.session_state.chat_history)):
-        if len(st.session_state.chat_history[i]) == 2:
-            q, a = st.session_state.chat_history[i]
-            st.session_state.chat_history[i] = (q, a, [])
+        with chat_container:
+            for i in range(len(st.session_state.chat_history)):
+                if len(st.session_state.chat_history[i]) == 2:
+                    q, a = st.session_state.chat_history[i]
+                    st.session_state.chat_history[i] = (q, a, [])
 
-    for chat_entry in st.session_state.chat_history:
-        if len(chat_entry) == 3:
-            q, a, suggestions = chat_entry
-        else:
-            q, a = chat_entry
-            suggestions = []
-        print("Rendering suggestions in chat history:", suggestions)
-        with st.chat_message("user"):
-            st.markdown(q)
-        with st.chat_message("assistant"):
-            st.markdown(a)
-            # Show suggestion buttons if present or if answer contains fallback phrases
-            fallback_phrases = [
-                "i'm here to help with hr policy-related questions only.",
-                "sorry, i couldn't find information related to that in the document.",
-                "does not specify",
-                "couldn't find",
-                "not available",
-                "no information",
-                "not provided",
-                "not mentioned",
-                "unknown",
-                "not stated",
-                "not clear",
-                "not sure",
-                "unable to find",
-                "no details"
-            ]
-            answer_lower = a.lower()
-            if suggestions or any(phrase in answer_lower for phrase in fallback_phrases):
-                st.markdown("**Did you mean:**")
-                # If suggestions empty, show FAQ_QUESTIONS as fallback suggestions
-                if not suggestions:
-                    from gemini_llm import FAQ_QUESTIONS
-                    fallback_suggestions = FAQ_QUESTIONS[:3]
+            for chat_entry in st.session_state.chat_history:
+                if len(chat_entry) == 3:
+                    q, a, suggestions = chat_entry
                 else:
-                    fallback_suggestions = suggestions
+                    q, a = chat_entry
+                    suggestions = []
+                with st.chat_message("user"):
+                    st.markdown(q)
+                with st.chat_message("assistant"):
+                    st.markdown(a)
+                    fallback_phrases = [
+                        "i'm here to help with hr policy-related questions only.",
+                        "sorry, i couldn't find information related to that in the document.",
+                        "does not specify",
+                        "couldn't find",
+                        "not available"
+                    ]
+                    answer_lower = a.lower()
+                    if suggestions or any(phrase in answer_lower for phrase in fallback_phrases):
+                        st.markdown("**Did you mean:**")
+                        if not suggestions:
+                            from gemini_llm import FAQ_QUESTIONS
+                            fallback_suggestions = FAQ_QUESTIONS[:3]
+                        else:
+                            fallback_suggestions = suggestions
+                        
+                        if 'button_counter' not in st.session_state:
+                            st.session_state.button_counter = 0
+                        
+                        for i, sug in enumerate(fallback_suggestions):
+                            st.session_state.button_counter += 1
+                            key = f"sug_btn_{st.session_state.button_counter}"
+                            if st.button(sug, key=key):
+                                st.session_state["pending_question"] = sug
+                                st.rerun()
+
+    with main_col2:
+        st.subheader("📅 My Calendar & Tasks")
+        
+        if not emp_id:
+            st.warning("Please switch to an employee account to use the calendar.")
+        else:
+            tasks = get_employee_tasks(emp_id)
+            
+            # Simple form to add task
+            with st.expander("➕ Add New Event", expanded=False):
+                with st.form("add_task_form"):
+                    t_title = st.text_input("Title")
+                    t_desc = st.text_area("Description")
+                    t_type = st.selectbox("Type", ["task", "event", "deadline", "meeting"])
+                    t_date = st.date_input("Date/Deadline")
+                    
+                    if st.form_submit_button("Add to Calendar"):
+                        if t_title:
+                            add_employee_task(emp_id, t_title, t_desc, str(t_date), t_type)
+                            st.success("Added!")
+                            st.rerun()
+                        else:
+                            st.error("Title is required.")
+
+            try:
+                from streamlit_calendar import calendar
                 
-                # Initialize button counter if not exists
-                if 'button_counter' not in st.session_state:
-                    st.session_state.button_counter = 0
+                # Format events for streamlit-calendar
+                calendar_events = []
+                for t in tasks:
+                    color = "#3788d8" # default blue
+                    if t['status'] == 'completed':
+                        color = "#28a745" # green
+                    elif t['event_type'] == 'deadline':
+                        color = "#dc3545" # red
+                    elif t['event_type'] == 'meeting':
+                        color = "#ffc107" # yellow
+                        
+                    # Calendar needs start date, we use deadline as start for tasks for simplicity
+                    dt_val = t['deadline']
+                    if not dt_val:
+                        import datetime
+                        dt_val = str(datetime.date.today())
+                        
+                    calendar_events.append({
+                        "title": f"{'✅ ' if t['status']=='completed' else ''}{t['title']}",
+                        "start": dt_val,
+                        "color": color
+                    })
                 
-                for i, sug in enumerate(fallback_suggestions):
-                    # Use global counter for truly unique keys
-                    st.session_state.button_counter += 1
-                    key = f"sug_btn_{st.session_state.button_counter}"
-                    if st.button(sug, key=key):
-                        st.session_state["pending_question"] = sug
+                calendar_options = {
+                    "headerToolbar": {
+                        "left": "today prev,next",
+                        "center": "title",
+                        "right": "dayGridMonth"
+                    },
+                    "initialView": "dayGridMonth",
+                    "height": 450
+                }
+                
+                calendar(events=calendar_events, options=calendar_options)
+            except ImportError:
+                st.warning("Please install streamlit-calendar using `pip install streamlit-calendar` to view the graphical calendar.")
+                
+            # Quick actions area below calendar
+            st.write("---")
+            st.subheader("Action Items")
+            pending = [t for t in tasks if t['status'] == 'pending']
+            
+            if not pending:
+                st.write("No pending action items.")
+            else:
+                for t in pending[:5]: # show up to 5
+                    if st.button(f"Mark Complete: {t['title']}", key=f"complete_{t['id']}", use_container_width=True):
+                        update_employee_task_status(t['id'], 'completed')
                         st.rerun()

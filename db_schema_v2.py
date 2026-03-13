@@ -120,6 +120,21 @@ def create_enhanced_schema():
         )
     """)
     
+    # ========== EMPLOYEE TASKS TABLE (New) ==========
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS employee_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            employee_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            deadline TEXT,
+            event_type TEXT CHECK(event_type IN ('task', 'event', 'deadline', 'meeting')),
+            status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'completed', 'cancelled')),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (employee_id) REFERENCES employees(employee_id)
+        )
+    """)
+    
     conn.commit()
     conn.close()
     print("Enhanced database schema created successfully!")

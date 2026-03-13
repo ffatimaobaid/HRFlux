@@ -66,102 +66,48 @@ except ImportError:
     print("Workflow engine not available. Using legacy leave request handling.")
 
 def run_agent(user, question, model_name="models/gemini-1.5-flash", context_chunks=None):
-    # Get recent chat history for conversation continuity
-    chat_history = get_recent_history(user)
-
-    # --- STATUS CHECK INTENT DETECTION ---
-    status_keywords = ["status", "approved", "rejected", "application", "request", "ticket", "complaint", "what happened", "my leave", "update on"]
-    if any(k in question.lower() for k in status_keywords):
-        logger.info(f"Status check detected for user: {user}")
-        user_status_context = "User's Recent Activity Status:\n"
-        
-        if WORKFLOW_ENGINE_AVAILABLE:
-            # 1. Fetch Leave Requests
-            try:
-                # We need to get employee_id first
-                emp = get_employee(username=user)
-                if emp:
-                    # workflow_engine doesn't have a direct 'get_history' by id exposed as static, 
-                    # but checks 'get_employee_leave_history' at module level
-                    from workflow_engine import get_employee_leave_history
-                    leaves = get_employee_leave_history(emp['employee_id'], limit=3)
-                    if leaves:
-                        user_status_context += "\nRecent Leave Requests:\n"
-                        for l in leaves:
-                            # l: id, emp_id, type, start, end, days, reason, status, approver, approved_at, comments, ...
-                            lid, ltype, start, end, status, comments = l[0], l[2], l[3], l[4], l[7], l[10]
-                            user_status_context += f"- Leave ({ltype}) from {start} to {end}: {status.upper()}"
-                            if status in ['approved', 'rejected'] and comments:
-                                user_status_context += f" (Admin Note: {comments})"
-                            user_status_context += "\n"
-                    else:
-                        user_status_context += "\nNo recent leave requests found.\n"
-            except Exception as e:
-                logger.error(f"Error fetching leave status: {e}")
-
-            # 2. Fetch Escalations
-            try:
-                escalations = ChatEscalationEngine.get_user_escalations(user, limit=3)
-                if escalations:
-                    user_status_context += "\nRecent Support Escalations:\n"
-                    for esc in escalations:
-                        # esc: reason, status, resolution_notes, date, resolved_at
-                        user_status_context += f"- Ticket ({esc['reason']}): {esc['status'].upper()}"
-                        if esc['status'] == 'resolved' and esc['resolution_notes']:
-                            user_status_context += f" (Resolution: {esc['resolution_notes']})"
-                        user_status_context += "\n"
-                else:
-                    user_status_context += "\nNo recent escalations found.\n"
-            except Exception as e:
-                logger.error(f"Error fetching escalation status: {e}")
-        
-        # Inject this context into the chunks
-        if context_chunks is None:
-            context_chunks = []
-        context_chunks.append(user_status_context)
-        print(f"DEBUG: Injected Status Context:\n{user_status_context}")
-
-
-    # ===== NEW LANGGRAPH LOGIC START =====
-    from supervisor_workflow import hrflux_agent
-    from langchain_core.messages import HumanMessage, AIMessage
+    # Import the new shim for our unified LangGraph assistant
+    from supervisor_workflow import invoke_agent_legacy
     
-    # Build history_str for prompt injection
-    history_str = ""
-    if chat_history:
-        formatted = [f"User: {q}\nAI: {a}" for q, a in chat_history[-5:] if q and a and q.strip() and a.strip()]
-        if formatted:
-            history_str = "\n".join(formatted)
-        else:
-            history_str = "No prior exchanges."
-            
-    # Combine status context with question if available
-    if context_chunks:
-        question_with_context = f"Internal Context (Status/History):\n{chr(10).join(context_chunks)}\n\nUser Question:\n{question}"
-    else:
-        question_with_context = question
-        
-    state = {
-        "messages": [HumanMessage(content=question_with_context)],
-        "username": user,
-        "chat_history_str": history_str,
-    }
-    
-    logger.info(f"Invoking hrflux_agent for user {user}")
+    # Save the user query to standard DB logging if needed
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     try:
-        result = hrflux_agent.invoke(state)
-        answer = result["messages"][-1].content
+        # The legacy shim expects a state dict with 'messages' and 'username'
+        from langchain_core.messages import HumanMessage
+        state = {
+            "messages": [HumanMessage(content=question)],
+            "username": user
+        }
+        
+        # Invoke the LangGraph agent with an automatic retry for intermittent Groq tool-use parse errors
+        result = None
+        for attempt in range(3):
+            try:
+                result = invoke_agent_legacy(state)
+                break
+            except Exception as e:
+                if 'tool_use_failed' in str(e) or 'invalid_request_error' in str(e):
+                    if attempt < 2:
+                        logger.warning(f"Groq tool parsing failed (Attempt {attempt+1}/3). Retrying...")
+                        continue
+                raise e
+        
+        # Extract the final answer
+        final_answer = result["messages"][-1].content
+        
+        # Log it
+        save_log(user, question, final_answer)
+        
+        # Determine suggestions based on the final answer
+        suggestions = []
+        if "I'm here to help with HR-related" in final_answer or "completely unrelated" in final_answer:
+            suggestions = get_similar_questions(question, FAQ_QUESTIONS, top_n=3)
+        
+        return final_answer, suggestions
+        
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        logger.error(f"Error invoking hrflux_agent: {e}")
-        answer = "I'm sorry, an internal error occurred while processing your request."
-        
-    suggestions = []
-    if "I'm here to help with HR-related" in answer or "completely unrelated" in answer:
-        from gemini_llm import get_similar_questions, FAQ_QUESTIONS
-        suggestions = get_similar_questions(question, FAQ_QUESTIONS, top_n=3)
-        
-    from db import save_log
-    save_log(user, question, answer)
-    return answer, suggestions
+        logger.error(f"Error during unified assistant invocation: {e}", exc_info=True)
+        fallback_msg = f"I'm sorry, I encountered an internal error. Please try again later. ({str(e)})"
+        save_log(user, question, fallback_msg)
+        return fallback_msg, [] # Return empty suggestions on error

@@ -262,3 +262,42 @@ def login_user(username, password):
     
     conn.close()
     return user is not None
+
+
+def add_employee_task(employee_id, title, description, deadline, event_type, status='pending'):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    try:
+        c.execute("""
+            INSERT INTO employee_tasks (employee_id, title, description, deadline, event_type, status)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (employee_id, title, description, deadline, event_type, status))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error adding task: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_employee_tasks(employee_id):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT * FROM employee_tasks WHERE employee_id = ? ORDER BY COALESCE(deadline, '9999-12-31') ASC", (employee_id,))
+    rows = c.fetchall()
+    conn.close()
+    
+    columns = ['id', 'employee_id', 'title', 'description', 'deadline', 'event_type', 'status', 'created_at']
+    return [dict(zip(columns, row)) for row in rows]
+
+def update_employee_task_status(task_id, status):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    try:
+        c.execute("UPDATE employee_tasks SET status = ? WHERE id = ?", (status, task_id))
+        conn.commit()
+        return True
+    except Exception:
+        return False
+    finally:
+        conn.close()

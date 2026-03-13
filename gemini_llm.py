@@ -1,12 +1,10 @@
-import google.generativeai as genai
+from langchain_groq import ChatGroq
 from config import get_current_api_key, rotate_api_key
+from langchain_core.messages import SystemMessage, HumanMessage
 import json
 from embedder import model  # For embeddings
 import numpy as np
 import time
-
-# Initialize with current API key
-genai.configure(api_key=get_current_api_key())
 
 # List of FAQ/reference questions for suggestions
 FAQ_QUESTIONS = [
@@ -55,8 +53,8 @@ def get_similar_questions(user_query, faq_questions=FAQ_QUESTIONS, top_n=3):
     return [faq_questions[i] for i in top_indices]
 
 
-def query_gemini_with_retry(context_chunks, question, model_name="models/gemini-2.5-flash", chat_history=None, hr_knowledge=None, max_retries=3):
-    """Query Gemini with automatic key rotation on quota limits"""
+def query_gemini_with_retry(context_chunks, question, model_name="llama-3.3-70b-versatile", chat_history=None, hr_knowledge=None, max_retries=3):
+    """Query Groq with automatic key rotation on quota limits"""
     
     # Build history string
     if chat_history:
@@ -77,8 +75,7 @@ def query_gemini_with_retry(context_chunks, question, model_name="models/gemini-
     if hr_knowledge:
         hr_knowledge_text = f"\n\nGeneral HR Knowledge:\n{hr_knowledge}"
 
-    # Build the complete prompt
-    prompt = f"""
+    system_prompt = f"""
 You are a professional, helpful HR assistant with comprehensive knowledge of HR policies and procedures.
 
 Responsibilities:
@@ -106,24 +103,22 @@ Conversation History:
 HR Policy Document (Uploaded):
 {context_text}
 {hr_knowledge_text}
----
-
-User Question:
-{question}
-
----
-
-Answer (using documents, HR knowledge, and conversation context):
 """
     
     for attempt in range(max_retries):
         try:
-            model = genai.GenerativeModel(model_name=model_name)
-            response = model.generate_content(
-                prompt,
-                generation_config={"temperature": 0.3, "max_output_tokens": 400}
+            llm = ChatGroq(
+                temperature=0.3, 
+                model_name=model_name,
+                groq_api_key=get_current_api_key(),
+                max_tokens=400
             )
-            return response.text.strip(), True  # Success
+            messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=question)
+            ]
+            response = llm.invoke(messages)
+            return response.content.strip(), True  # Success
             
         except Exception as e:
             error_str = str(e)
@@ -131,13 +126,11 @@ Answer (using documents, HR knowledge, and conversation context):
             
             # Check if it's a quota/rate limit error
             if ("429" in error_str or "quota" in error_str.lower() or 
-                "resource has been exhausted" in error_str.lower() or 
                 "rate limit" in error_str.lower()):
                 
                 if attempt < max_retries - 1:
                     print(f"API quota reached, rotating to next key...")
-                    new_key = rotate_api_key()
-                    genai.configure(api_key=new_key)
+                    rotate_api_key()
                     time.sleep(2)  # Brief pause before retry
                     continue
                 else:
@@ -149,7 +142,7 @@ Answer (using documents, HR knowledge, and conversation context):
     return "Failed after all retry attempts.", False
 
 
-def query_gemini(context_chunks, question, model_name="models/gemini-2.5-flash", chat_history=None, hr_knowledge=None):
+def query_gemini(context_chunks, question, model_name="llama-3.3-70b-versatile", chat_history=None, hr_knowledge=None):
     """Wrapper for backward compatibility"""
     response, success = query_gemini_with_retry(context_chunks, question, model_name, chat_history, hr_knowledge)
     return response

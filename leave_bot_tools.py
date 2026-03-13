@@ -10,7 +10,8 @@ try:
     from workflow_engine import LeaveWorkflowEngine
     from db_schema_v2 import get_employee, get_leave_balance
     from hr_knowledge_base import get_hr_procedure
-    from rag import retrieve_context
+    from rag import get_layered_context
+    from db import get_employee_tasks
 except ImportError as e:
     logger.error(f"Failed to import backend modules for LeaveBot Tools: {e}")
 
@@ -100,13 +101,17 @@ def tool_search_hr_policy(query: str) -> str:
     """
     try:
         # First check hardcoded procedures for quick wins
-        procedure = get_hr_procedure(query)
-        if procedure and not procedure.startswith("I couldn't find a specific step-by-step procedure"):
-            # If we got a good hit from the hardcoded base, return it
-            pass
+        procedure_matches = get_hr_procedure(query)
+        procedure_text = ""
+        if procedure_matches:
+            from hr_knowledge_base import format_hr_response
+            procedure_text = format_hr_response(procedure_matches)
         
         # Always supplement with Hybrid RAG
-        context_chunks = retrieve_context(query, top_k=3)
+        context_chunks = get_layered_context(query, top_k=3)
+        if hasattr(context_chunks, 'insert') and procedure_text:
+            context_chunks.insert(0, f"Standard Procedure:\n{procedure_text}")
+            
         return json.dumps({
             "policy_excerpts": context_chunks if context_chunks else ["No specific policy documents found."]
         })
@@ -138,11 +143,43 @@ def tool_submit_leave_request(username: str, leave_type: str, start_date: str, e
     except Exception as e:
         return json.dumps({"error": str(e)})
 
+@tool
+def tool_get_employee_calendar(username: str) -> str:
+    """
+    Fetch the employee's pending tasks, deadlines, and meetings from their calendar.
+    Use this to check for overlapping responsibilities when the employee wants to take leave.
+    """
+    try:
+        emp = get_employee(username=username)
+        if not emp:
+            return json.dumps({"error": "Employee record not found."})
+            
+        tasks = get_employee_tasks(emp['employee_id'])
+        pending_tasks = [t for t in tasks if t['status'] == 'pending']
+        
+        if not pending_tasks:
+            return json.dumps({"message": "No upcoming tasks, deadlines, or meetings found on the calendar."})
+            
+        return json.dumps({
+            "calendar_events": [
+                {
+                    "title": t["title"],
+                    "description": t.get("description", ""),
+                    "event_type": t["event_type"],
+                    "deadline": t["deadline"]
+                }
+                for t in pending_tasks
+            ]
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
 # List of all tools to bind to the LeaveBot
 leave_bot_tools = [
     tool_get_leave_balance,
     tool_get_leave_history,
     tool_get_employee_profile,
     tool_search_hr_policy,
-    tool_submit_leave_request
+    tool_submit_leave_request,
+    tool_get_employee_calendar
 ]
