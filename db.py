@@ -5,6 +5,16 @@ from datetime import datetime, timedelta
 DB_PATH = "queries.db"
 
 def init_db():
+    # Initialize the enhanced schema which includes all tables
+    from db_schema_v2 import create_enhanced_schema, migrate_existing_data
+    
+    # Create all tables including the enhanced ones
+    create_enhanced_schema()
+    
+    # Migrate any existing data and ensure time fields are added
+    migrate_existing_data()
+    
+    # Also create the legacy tables for backwards compatibility
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 

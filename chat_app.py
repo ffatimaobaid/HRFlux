@@ -265,7 +265,16 @@ else:
         with st.popover(f"🔔 Notifications ({badge_count})"):
             if immediate_tasks:
                 st.write("**🚨 Due Today / Overdue:**")
-                for t in immediate_tasks:
+                # Separate meetings from other tasks
+                immediate_meetings = [t for t in immediate_tasks if t['event_type'] == 'meeting']
+                immediate_other = [t for t in immediate_tasks if t['event_type'] != 'meeting']
+                
+                # Show meetings first with special icon
+                for t in immediate_meetings:
+                    st.error(f"🤝 {t['title']} (Meeting - Due: {t['deadline']})")
+                
+                # Show other tasks
+                for t in immediate_other:
                     st.error(f"- {t['title']} (Due: {t['deadline']})")
                 
                 # Only toast for immediate tasks
@@ -282,9 +291,21 @@ else:
             if upcoming_tasks:
                 st.write("---")
                 st.write("**📅 Upcoming Tasks:**")
-                # limit to next 5 upcoming
-                for t in upcoming_tasks[:5]:
-                    st.info(f"- {t['title']} (Due: {t['deadline']})")
+                # Separate meetings from other tasks
+                upcoming_meetings = [t for t in upcoming_tasks if t['event_type'] == 'meeting']
+                upcoming_other = [t for t in upcoming_tasks if t['event_type'] != 'meeting']
+                
+                # Show meetings first with special icon
+                if upcoming_meetings:
+                    st.write("**🤝 Upcoming Meetings:**")
+                    for t in upcoming_meetings[:3]: # limit to next 3 meetings
+                        st.info(f"🤝 {t['title']} (Meeting - {t['deadline']})")
+                
+                # Show other tasks
+                if upcoming_other:
+                    st.write("**📋 Other Tasks:**")
+                    for t in upcoming_other[:3]: # limit to next 3 other tasks
+                        st.info(f"- {t['title']} (Due: {t['deadline']})")
                 
     with nav_col3:
         if st.button("Clear Chat", help="Clear conversation history"):
@@ -315,36 +336,7 @@ else:
         if "chat_history" not in st.session_state:
             st.session_state.chat_history = get_recent_history(user)
 
-    # Input box for new user question
-    # Check for a pending question from a suggestion button
-    if "pending_question" in st.session_state:
-        question = st.session_state.pop("pending_question")
-    else:
-        question = st.chat_input("Ask about HR policies...")
-    if question:
-        try:
-            # Get recent context (24 hours) for chat continuity (not for retrieval)
-            context = get_recent_context(user)
-
-            # Generate answer and suggestions (let run_agent handle retrieval and query expansion)
-            answer, suggestions = run_agent(user, question, model)
-            print("Suggestions returned from run_agent:", suggestions)
-        except Exception:
-            traceback.print_exc()
-            answer = "Sorry, something went wrong while processing your request."
-            suggestions = []
-
-        is_important = "leave" in question.lower()
-
-        # Save to DB and context cache
-        save_chat_message(user, question, answer, important=is_important)
-        add_to_cache(user, question, answer)
-
-        # Update chat history in session
-        st.session_state.chat_history.append((question, answer, suggestions))
-
-    # Render all previous chat messages
-    # Ensure all chat history entries have 3 elements (q, a, suggestions)
+        # Render all previous chat messages (always show, not just when sending)
         with chat_container:
             for i in range(len(st.session_state.chat_history)):
                 if len(st.session_state.chat_history[i]) == 2:
@@ -387,6 +379,45 @@ else:
                                 st.session_state["pending_question"] = sug
                                 st.rerun()
 
+        # Input box for new user question
+        if "pending_question" in st.session_state:
+            question = st.session_state.pop("pending_question")
+        else:
+            question = st.chat_input("Ask about HR policies...")
+        if question:
+            # Display user message immediately
+            with chat_container:
+                with st.chat_message("user"):
+                    st.markdown(question)
+                
+                # Show typing indicator
+                with st.chat_message("assistant"):
+                    st.write("Thinking...")
+            
+            try:
+                # Get recent context (24 hours) for chat continuity (not for retrieval)
+                context = get_recent_context(user)
+
+                # Generate answer and suggestions (let run_agent handle retrieval and query expansion)
+                answer, suggestions = run_agent(user, question, model)
+                print("Suggestions returned from run_agent:", suggestions)
+            except Exception:
+                traceback.print_exc()
+                answer = "Sorry, something went wrong while processing your request."
+                suggestions = []
+
+            is_important = "leave" in question.lower()
+
+            # Save to DB and context cache
+            save_chat_message(user, question, answer, important=is_important)
+            add_to_cache(user, question, answer)
+
+            # Update chat history in session
+            st.session_state.chat_history.append((question, answer, suggestions))
+            
+            # Rerun to display the assistant's response
+            st.rerun()
+
     with main_col2:
         st.subheader("📅 My Calendar & Tasks")
         
@@ -402,52 +433,241 @@ else:
                     t_desc = st.text_area("Description")
                     t_type = st.selectbox("Type", ["task", "event", "deadline", "meeting"])
                     t_date = st.date_input("Date/Deadline")
+                    t_start_time = st.time_input("Start Time", value=None)
+                    t_end_time = st.time_input("End Time", value=None)
                     
                     if st.form_submit_button("Add to Calendar"):
                         if t_title:
-                            add_employee_task(emp_id, t_title, t_desc, str(t_date), t_type)
-                            st.success("Added!")
-                            st.rerun()
+                            # Use the enhanced function that supports time
+                            from meeting_tools import add_employee_task_with_time
+                            start_str = str(t_start_time).replace(" datetime.time(", "").replace(")", "") if t_start_time else None
+                            end_str = str(t_end_time).replace(" datetime.time(", "").replace(")", "") if t_end_time else None
+                            
+                            if start_str and end_str:
+                                start_str = f"{start_str.split(':')[0]}:{start_str.split(':')[1]}"
+                                end_str = f"{end_str.split(':')[0]}:{end_str.split(':')[1]}"
+                            
+                            success = add_employee_task_with_time(
+                                emp_id, t_title, t_desc, str(t_date), t_type, 
+                                start_str, end_str
+                            )
+                            if success:
+                                st.success("Added!")
+                                st.rerun()
+                            else:
+                                st.error("Failed to add event.")
                         else:
                             st.error("Title is required.")
+
+            # Calendar view state management
+            if 'calendar_view' not in st.session_state:
+                st.session_state.calendar_view = 'month'
+            if 'selected_date' not in st.session_state:
+                st.session_state.selected_date = None
+
+            # Add date selector for day view
+            if st.session_state.calendar_view == 'day' and st.session_state.selected_date:
+                col_back, col_date = st.columns([1, 3])
+                with col_back:
+                    if st.button("← Back to Month", key="back_to_month"):
+                        st.session_state.calendar_view = 'month'
+                        st.session_state.selected_date = None
+                        st.rerun()
+                with col_date:
+                    st.subheader(f"📅 Schedule for {st.session_state.selected_date}")
+
+            # Remove the separate date picker since we want calendar to be clickable
 
             try:
                 from streamlit_calendar import calendar
                 
-                # Format events for streamlit-calendar
-                calendar_events = []
-                for t in tasks:
-                    color = "#3788d8" # default blue
-                    if t['status'] == 'completed':
-                        color = "#28a745" # green
-                    elif t['event_type'] == 'deadline':
-                        color = "#dc3545" # red
-                    elif t['event_type'] == 'meeting':
-                        color = "#ffc107" # yellow
+                # Filter events for selected date if in day view
+                if st.session_state.calendar_view == 'day' and st.session_state.selected_date:
+                    day_events = []
+                    
+                    # Debug: Show all tasks for this employee
+                    st.write(f"🔍 Debug: Total tasks for employee: {len(tasks)}")
+                    st.write(f"🔍 Debug: Selected date: {st.session_state.selected_date}")
+                    
+                    for t in tasks:
+                        st.write(f"🔍 Task: {t['title']} | Date: {t['deadline']} | Start: {t.get('start_time')} | End: {t.get('end_time')}")
                         
-                    # Calendar needs start date, we use deadline as start for tasks for simplicity
-                    dt_val = t['deadline']
-                    if not dt_val:
-                        import datetime
-                        dt_val = str(datetime.date.today())
+                        if t['deadline'] == st.session_state.selected_date:
+                            color = "#3788d8" # default blue
+                            if t['status'] == 'completed':
+                                color = "#28a745" # green
+                            elif t['event_type'] == 'deadline':
+                                color = "#dc3545" # red
+                            elif t['event_type'] == 'meeting':
+                                color = "#ffc107" # yellow
+                            
+                            # Create event with time information if available
+                            event_title = f"{'✅ ' if t['status']=='completed' else ''}{t['title']}"
+                            event_data = {
+                                "title": event_title,
+                                "start": st.session_state.selected_date,
+                                "color": color
+                            }
+                            
+                            # Add time information if available
+                            if t.get('start_time'):
+                                # Combine date and time for proper calendar display with seconds
+                                start_datetime = f"{st.session_state.selected_date}T{t['start_time']}:00"
+                                event_data["start"] = start_datetime
+                                st.write(f"⏰ Event start set to: {start_datetime}")
+                                
+                                if t.get('end_time'):
+                                    end_datetime = f"{st.session_state.selected_date}T{t['end_time']}:00"
+                                    event_data["end"] = end_datetime
+                                    st.write(f"⏰ Event end set to: {end_datetime}")
+                                else:
+                                    # Default 1-hour duration if no end time
+                                    start_parts = t['start_time'].split(':')
+                                    start_hour = int(start_parts[0])
+                                    start_min = int(start_parts[1])
+                                    end_hour = (start_hour + 1) % 24
+                                    end_datetime = f"{st.session_state.selected_date}T{end_hour:02d}:{start_min:02d}:00"
+                                    event_data["end"] = end_datetime
+                                    st.write(f"⏰ Default end set to: {end_datetime}")
+                            else:
+                                st.write(f"⚠️ No start_time for event: {t['title']}")
+                            
+                            day_events.append(event_data)
+                            st.write(f"✅ Added event: {event_data}")
+                    
+                    st.write(f"📅 Final day_events: {day_events}")
+                    
+                    # Show day view with time slots - simplified configuration
+                    day_options = {
+                        "initialView": "timeGridDay",
+                        "height": 450,
+                        "slotMinTime": "08:00",
+                        "slotMaxTime": "18:00",
+                        "allDaySlot": False
+                    }
+                    
+                    # Add a back button above the calendar
+                    col_back, col_title = st.columns([1, 3])
+                    with col_back:
+                        if st.button("← Back to Month", key="back_to_month_2", use_container_width=True):
+                            st.session_state.calendar_view = 'month'
+                            st.session_state.selected_date = None
+                            st.rerun()
+                    with col_title:
+                        st.subheader(f"📅 Schedule for {st.session_state.selected_date}")
+                    
+                    # Debug: Show what events we're creating
+                    if len(day_events) == 0:
+                        st.info(f"No events scheduled for {st.session_state.selected_date}")
                         
-                    calendar_events.append({
-                        "title": f"{'✅ ' if t['status']=='completed' else ''}{t['title']}",
-                        "start": dt_val,
-                        "color": color
-                    })
-                
-                calendar_options = {
-                    "headerToolbar": {
-                        "left": "today prev,next",
-                        "center": "title",
-                        "right": "dayGridMonth"
-                    },
-                    "initialView": "dayGridMonth",
-                    "height": 450
-                }
-                
-                calendar(events=calendar_events, options=calendar_options)
+                        # Add a test event to verify calendar works
+                        test_event = {
+                            "title": "Test Meeting (2:00-3:00 PM)",
+                            "start": f"{st.session_state.selected_date}T14:00:00",
+                            "end": f"{st.session_state.selected_date}T15:00:00",
+                            "color": "#ff6b6b"
+                        }
+                        st.write("🧪 Adding test event to verify calendar works...")
+                        day_events.append(test_event)
+                    else:
+                        st.write(f"📅 Found {len(day_events)} events for {st.session_state.selected_date}")
+                    
+                    # Show final events for debugging
+                    st.write("🔍 Final events being sent to calendar:")
+                    for i, event in enumerate(day_events):
+                        st.write(f"  {i+1}. {event['title']}: {event.get('start', 'No start')} - {event.get('end', 'No end')}")
+                    
+                    # Try the calendar with minimal configuration
+                    try:
+                        calendar(events=day_events, options=day_options)
+                        st.success("✅ Calendar rendered successfully!")
+                    except Exception as e:
+                        st.error(f"❌ Calendar error: {e}")
+                        st.write("🔧 Trying alternative display...")
+                        
+                        # Fallback: Show events as a simple list
+                        st.write("### Events as List:")
+                        for event in day_events:
+                            start_time = event.get('start', 'All day')
+                            if 'T' in start_time:
+                                time_part = start_time.split('T')[1][:5]
+                                st.write(f"- **{event['title']}** at {time_part}")
+                            else:
+                                st.write(f"- **{event['title']}** (All day)")
+                else:
+                    # Format events for streamlit-calendar (month view)
+                    calendar_events = []
+                    for t in tasks:
+                        color = "#3788d8" # default blue
+                        if t['status'] == 'completed':
+                            color = "#28a745" # green
+                        elif t['event_type'] == 'deadline':
+                            color = "#dc3545" # red
+                        elif t['event_type'] == 'meeting':
+                            color = "#ffc107" # yellow
+                            
+                        # Calendar needs start date, we use deadline as start for tasks for simplicity
+                        dt_val = t['deadline']
+                        if not dt_val:
+                            import datetime
+                            dt_val = str(datetime.date.today())
+                        
+                        # Create event with time information if available
+                        event_title = f"{'✅ ' if t['status']=='completed' else ''}{t['title']}"
+                        event_data = {
+                            "title": event_title,
+                            "start": dt_val,
+                            "color": color,
+                            "url": f"?date={dt_val}"  # Custom URL to trigger date selection
+                        }
+                        
+                        # Add time information if available
+                        if t.get('start_time'):
+                            # Combine date and time for proper calendar display
+                            start_datetime = f"{dt_val}T{t['start_time']}"
+                            event_data["start"] = start_datetime
+                            
+                            if t.get('end_time'):
+                                end_datetime = f"{dt_val}T{t['end_time']}"
+                                event_data["end"] = end_datetime
+                            else:
+                                # Default 1-hour duration if no end time
+                                start_parts = t['start_time'].split(':')
+                                start_hour = int(start_parts[0])
+                                start_min = int(start_parts[1])
+                                end_hour = (start_hour + 1) % 24
+                                end_datetime = f"{dt_val}T{end_hour:02d}:{start_min:02d}"
+                                event_data["end"] = end_datetime
+                        
+                        calendar_events.append(event_data)
+                    
+                    # Check URL parameters for date selection
+                    query_params = st.query_params
+                    if 'date' in query_params:
+                        selected_date = query_params['date']
+                        st.session_state.calendar_view = 'day'
+                        st.session_state.selected_date = selected_date
+                        # Clear the query param
+                        st.query_params.clear()
+                        st.rerun()
+                    
+                    calendar_options = {
+                        "headerToolbar": {
+                            "left": "today prev,next",
+                            "center": "title",
+                            "right": ""
+                        },
+                        "initialView": "dayGridMonth",
+                        "height": 450,
+                        "slotMinTime": "08:00:00",
+                        "slotMaxTime": "18:00:00",
+                        "allDaySlot": False,
+                        "navLinks": True,
+                        "eventClick": "function(info) { window.location.href = '?date=' + info.event.startStr.split('T')[0]; }",
+                        "dateClick": "function(info) { window.location.href = '?date=' + info.dateStr; }"
+                    }
+                    
+                    calendar(events=calendar_events, options=calendar_options)
             except ImportError:
                 st.warning("Please install streamlit-calendar using `pip install streamlit-calendar` to view the graphical calendar.")
                 

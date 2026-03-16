@@ -34,6 +34,9 @@ def create_enhanced_schema():
         )
     """)
     
+    # Add time fields to employee_tasks table if they don't exist
+    add_time_fields_to_tasks(conn, c)
+    
     # ========== ENHANCED LEAVE REQUESTS TABLE ==========
     c.execute("""
         CREATE TABLE IF NOT EXISTS leave_requests_v2 (
@@ -139,6 +142,36 @@ def create_enhanced_schema():
     conn.close()
     print("Enhanced database schema created successfully!")
 
+def add_time_fields_to_tasks(conn, c):
+    """
+    Add start_time and end_time fields to employee_tasks table for better time tracking.
+    This function is called during schema creation to ensure time fields are always available.
+    """
+    try:
+        # Check if columns already exist
+        c.execute("PRAGMA table_info(employee_tasks)")
+        columns = [row[1] for row in c.fetchall()]
+        
+        if 'start_time' not in columns:
+            c.execute("""
+                ALTER TABLE employee_tasks 
+                ADD COLUMN start_time TEXT
+            """)
+            print("Added start_time column to employee_tasks table")
+        
+        if 'end_time' not in columns:
+            c.execute("""
+                ALTER TABLE employee_tasks 
+                ADD COLUMN end_time TEXT
+            """)
+            print("Added end_time column to employee_tasks table")
+        
+        conn.commit()
+        
+    except Exception as e:
+        print(f"Warning: Could not add time fields to employee_tasks table: {e}")
+        # Don't rollback the entire transaction for this optional enhancement
+
 
 def migrate_existing_data():
     """
@@ -190,6 +223,9 @@ def migrate_existing_data():
                 WHERE EXISTS (SELECT 1 FROM employees WHERE username = lr.user)
             """)
             print("Migrated leave requests to enhanced table")
+        
+        # Ensure time fields are added to existing employee_tasks table
+        add_time_fields_to_tasks(conn, c)
         
         conn.commit()
     except Exception as e:

@@ -32,6 +32,9 @@ blip_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image
 # --- Multiprocessing-safe embedding worker ---
 def embedding_worker(chunk):
     from embedder import model  # re-import inside subprocess
+    if model is None:
+        # Return a dummy embedding if model is not available
+        return [0.0] * 384  # Default embedding size for MiniLM
     return model.encode([chunk])[0]
 
 

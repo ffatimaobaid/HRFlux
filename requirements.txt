@@ -1,5 +1,6 @@
 # Core dependencies
 streamlit
+streamlit-calendar
 google-generativeai==0.8.3
 chromadb
 sentence-transformers
@@ -23,6 +24,7 @@ watchdog
 
 # Multimodal dependencies
 opencv-python
+plotly
 moviepy
 pydub
 SpeechRecognition
@@ -35,3 +37,8 @@ python-pptx
 EbookLib
 torch
 torchvision
+
+# Testing
+pytest
+pytest-mock
+reportlab

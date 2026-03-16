@@ -7,10 +7,17 @@ from docx import Document
 from pptx import Presentation
 from ebooklib import epub
 from unstructured.partition.auto import partition
-from sentence_transformers import SentenceTransformer
 
-# Load embedding model globally
-model = SentenceTransformer("all-MiniLM-L6-v2")
+# Load embedding model globally with error handling
+try:
+    from sentence_transformers import SentenceTransformer
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+except ImportError as e:
+    print(f"Warning: sentence-transformers not installed: {e}")
+    model = None
+except Exception as e:
+    print(f"Warning: Could not load embedding model: {e}")
+    model = None
 
 def extract_text(file_path):
     """
