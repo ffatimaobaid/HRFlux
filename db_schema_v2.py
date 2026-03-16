@@ -349,18 +349,31 @@ def get_all_employees():
     """
     Retrieve all active employees.
     """
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT * FROM employees WHERE status = 'active' ORDER BY full_name")
-    rows = c.fetchall()
-    conn.close()
-    
-    columns = ['employee_id', 'username', 'password', 'full_name', 'email', 
-              'department', 'designation', 'joining_date', 'manager_id',
-              'casual_leave_balance', 'sick_leave_balance', 'annual_leave_balance',
-              'salary', 'status', 'created_at']
-    
-    return [dict(zip(columns, row)) for row in rows]
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        # Check if employees table exists
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='employees'")
+        table_exists = c.fetchone()
+        
+        if not table_exists:
+            print("Employees table does not exist, returning empty list")
+            return []
+        
+        c.execute("SELECT * FROM employees WHERE status = 'active' ORDER BY full_name")
+        rows = c.fetchall()
+        conn.close()
+        
+        columns = ['employee_id', 'username', 'password', 'full_name', 'email', 
+                  'department', 'designation', 'joining_date', 'manager_id',
+                  'casual_leave_balance', 'sick_leave_balance', 'annual_leave_balance',
+                  'salary', 'status', 'created_at']
+        
+        return [dict(zip(columns, row)) for row in rows]
+    except Exception as e:
+        print(f"Error in get_all_employees: {e}")
+        return []
 
 
 if __name__ == "__main__":

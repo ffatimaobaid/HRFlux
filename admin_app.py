@@ -76,19 +76,25 @@ if nav_option == "Dashboard":
     
     # KPIs
     st.subheader("Key Performance Indicators")
-    col1, col2, col3 = st.columns(3)
     
-    employees = get_all_employees()
-    pending_leaves = LeaveWorkflowEngine.get_pending_requests()
-    escalations = LeaveWorkflowEngine.get_all_escalations()
-    pending_escalations = [e for e in escalations if e['status'] == 'pending']
-    
-    with col1:
-        st.metric("Total Employees", len(employees))
-    with col2:
-        st.metric("Pending Leave Approvals", len(pending_leaves))
-    with col3:
-        st.metric("Active Escalations", len(pending_escalations), delta_color="inverse")
+    try:
+        col1, col2, col3 = st.columns(3)
+        
+        employees = get_all_employees()
+        pending_leaves = LeaveWorkflowEngine.get_pending_requests()
+        escalations = LeaveWorkflowEngine.get_all_escalations()
+        pending_escalations = [e for e in escalations if e['status'] == 'pending']
+        
+        with col1:
+            st.metric("Total Employees", len(employees))
+        with col2:
+            st.metric("Pending Leave Approvals", len(pending_leaves))
+        with col3:
+            st.metric("Active Escalations", len(pending_escalations), delta_color="inverse")
+            
+    except Exception as e:
+        st.error(f"Error loading dashboard data: {e}")
+        st.info("Please check if the database is properly initialized.")
         
     st.markdown("---")
     
