@@ -6,7 +6,8 @@ import json
 import os
 import datetime
 import traceback
-import re
+from auth_manager import auth_manager
+from guardrails import ContentFilter, InputValidator, SecurityLogger
 
 st.set_page_config(page_title="HR Chatbot", layout="centered")
 
@@ -46,19 +47,24 @@ cleanup_old_sessions(retention_hours=24)
 
 # Global styles: custom CSS + Bootstrap
 try:
-    with open("styles/welcome.css") as f:
+    css_path = os.path.join(os.path.dirname(__file__), "styles", "welcome.css")
+    with open(css_path) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+except FileNotFoundError:
+    pass  # CSS file not found, continue without custom styles
+except Exception as e:
+    st.warning(f"Could not load CSS: {e}")
+
+try:
+    css_path = os.path.join(os.path.dirname(__file__), "styles", "login.css")
+    with open(css_path) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 except FileNotFoundError:
     pass
 
 try:
-    with open("styles/login.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-except FileNotFoundError:
-    pass
-
-try:
-    with open("styles/chat.css") as f:
+    css_path = os.path.join(os.path.dirname(__file__), "styles", "chat.css")
+    with open(css_path) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 except FileNotFoundError:
     pass
@@ -80,9 +86,13 @@ if "welcome_done" not in st.session_state:
 
 if not st.session_state.welcome_done:
     try:
-        with open("templates/welcome.html", "r", encoding="utf-8") as f:
+        template_path = os.path.join(os.path.dirname(__file__), "templates", "welcome.html")
+        with open(template_path, "r", encoding="utf-8") as f:
             welcome_html = f.read()
     except FileNotFoundError:
+        welcome_html = ""
+    except Exception as e:
+        st.warning(f"Could not load welcome template: {e}")
         welcome_html = ""
 
     if welcome_html:
@@ -144,7 +154,7 @@ if not st.session_state.logged_in:
                     st.success("Logged in!")
                     st.rerun()
                 else:
-                    st.error("Invalid username or password.")
+                    st.error("Invalid email or password")
 
             if st.button("Don't have an account? Sign Up", key="go_to_signup"):
                 st.session_state.show_signup = True
@@ -379,44 +389,84 @@ else:
                                 st.session_state["pending_question"] = sug
                                 st.rerun()
 
-        # Input box for new user question
-        if "pending_question" in st.session_state:
-            question = st.session_state.pop("pending_question")
-        else:
-            question = st.chat_input("Ask about HR policies...")
-        if question:
-            # Display user message immediately
-            with chat_container:
-                with st.chat_message("user"):
-                    st.markdown(question)
+    from auth_manager import auth_manager
+    from guardrails import ContentFilter, InputValidator, SecurityLogger
+
+    # Input box for new user question
+    if "pending_question" in st.session_state:
+        question = st.session_state.pop("pending_question")
+    else:
+        question = st.chat_input("Ask about HR policies...", key="main_chat_input")
+        
+    if question:
+        print(f"DEBUG: Processing question: {question}")
+        # Apply content filtering and validation
+        sanitized_question = ContentFilter.sanitize_input(question)
+        content_filter = ContentFilter.filter_content(question)
+        print(f"DEBUG: Content filter result: {content_filter}")
+        
+        if not content_filter['allowed']:
+            SecurityLogger.log_security_event('content_blocked', {
+                'original_question': question,
+                'sanitized_question': sanitized_question,
+                'filter_results': content_filter
+            }, user)
+            
+            st.error("❌ Inappropriate content detected. Please rephrase your question.")
+            st.write("**Issues found:**")
+            for warning in content_filter['warnings']:
+                st.write(f"- {warning}")
+            st.stop()
+        
+        print("DEBUG: Content allowed, processing...")
+        # Display user message immediately
+        with chat_container:
+            with st.chat_message("user"):
+                st.markdown(sanitized_question)
+            
+            # Show typing indicator
+            with st.chat_message("assistant"):
+                st.write("Thinking...")
+        
+        try:
+            # Get recent context (24 hours) for chat continuity (not for retrieval)
+            context = get_recent_context(user)
+
+            # Generate answer and suggestions (let run_agent handle retrieval and query expansion)
+            answer, suggestions = run_agent(user, question, model)
+            print("Suggestions returned from run_agent:", suggestions)
+        except Exception:
+            traceback.print_exc()
+            answer = "Sorry, something went wrong while processing your request."
+            suggestions = []
+
+        is_important = "leave" in question.lower()
+        print(f"DEBUG: Generated answer: {answer}")
+
+        # Save to DB and context cache
+        save_chat_message(user, question, answer, important=is_important)
+        add_to_cache(user, question, answer)
+
+        # Update chat history in session
+        st.session_state.chat_history.append((question, answer, suggestions))
+        
+        # Display assistant's response
+        with chat_container:
+            with st.chat_message("assistant"):
+                st.markdown(answer)
                 
-                # Show typing indicator
-                with st.chat_message("assistant"):
-                    st.write("Thinking...")
-            
-            try:
-                # Get recent context (24 hours) for chat continuity (not for retrieval)
-                context = get_recent_context(user)
-
-                # Generate answer and suggestions (let run_agent handle retrieval and query expansion)
-                answer, suggestions = run_agent(user, question, model)
-                print("Suggestions returned from run_agent:", suggestions)
-            except Exception:
-                traceback.print_exc()
-                answer = "Sorry, something went wrong while processing your request."
-                suggestions = []
-
-            is_important = "leave" in question.lower()
-
-            # Save to DB and context cache
-            save_chat_message(user, question, answer, important=is_important)
-            add_to_cache(user, question, answer)
-
-            # Update chat history in session
-            st.session_state.chat_history.append((question, answer, suggestions))
-            
-            # Rerun to display the assistant's response
-            st.rerun()
+                # Show suggestions if available
+                if suggestions:
+                    st.markdown("**Did you mean:**")
+                    for i, sug in enumerate(suggestions):
+                        # Create unique key using index
+                        if st.button(sug, key=f"suggestion_{i}_{sug}"):
+                            st.session_state["pending_question"] = sug
+                            st.rerun()
+        
+        print("DEBUG: About to rerun...")
+        # Rerun to display the updated chat history
+        st.rerun()
 
     with main_col2:
         st.subheader("📅 My Calendar & Tasks")

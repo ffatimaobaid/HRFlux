@@ -53,7 +53,7 @@ def get_similar_questions(user_query, faq_questions=FAQ_QUESTIONS, top_n=3):
     return [faq_questions[i] for i in top_indices]
 
 
-def query_gemini_with_retry(context_chunks, question, model_name="llama-3.3-70b-versatile", chat_history=None, hr_knowledge=None, max_retries=3):
+def query_gemini_with_retry(context_chunks, question, model_name="llama-3.3-70b-versatile", chat_history=None, hr_knowledge=None, max_retries=5):
     """Query Groq with automatic key rotation on quota limits"""
     
     # Build history string
@@ -107,6 +107,7 @@ HR Policy Document (Uploaded):
     
     for attempt in range(max_retries):
         try:
+            # Create fresh ChatGroq instance for each attempt with current API key
             llm = ChatGroq(
                 temperature=0.3, 
                 model_name=model_name,
@@ -124,19 +125,34 @@ HR Policy Document (Uploaded):
             error_str = str(e)
             print(f"Attempt {attempt + 1}/{max_retries}: {error_str}")
             
-            # Check if it's a quota/rate limit error
-            if ("429" in error_str or "quota" in error_str.lower() or 
-                "rate limit" in error_str.lower()):
-                
+            # Check if it's a quota/rate limit error - updated detection
+            is_rate_limit = (
+                "429" in error_str or 
+                "quota" in error_str.lower() or 
+                "rate limit" in error_str.lower() or
+                "rate_limit_exceeded" in error_str or
+                "tokens per day" in error_str or
+                "Need more tokens" in error_str
+            )
+            
+            if is_rate_limit:
                 if attempt < max_retries - 1:
-                    print(f"API quota reached, rotating to next key...")
+                    print(f"🔄 API quota reached, rotating to next key...")
+                    print(f"🔑 Current key before rotation: {get_current_api_key()[:8]}...{get_current_api_key()[-4:]}")
+                    
                     rotate_api_key()
-                    time.sleep(2)  # Brief pause before retry
+                    new_key = get_current_api_key()
+                    print(f"🔑 New key after rotation: {new_key[:8]}...{new_key[-4:]}")
+                    print(f"🆕 Will create fresh ChatGroq instance with new key")
+                    
+                    time.sleep(3)  # Brief pause before retry
                     continue
                 else:
+                    print("❌ All API keys have reached their limits.")
                     return "All API keys have reached their limits. Please try again later.", False
             else:
                 # Other errors, don't retry with key rotation
+                print(f"❌ Non-rate-limit error: {error_str}")
                 return f"An unexpected error occurred: {error_str}", False
     
     return "Failed after all retry attempts.", False

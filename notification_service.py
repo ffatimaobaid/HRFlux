@@ -1,15 +1,14 @@
 import os
-from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 import json
+from groq_client import create_groq_client
 
 def get_groq_llm():
-    from config import get_current_api_key
+    """Get Groq client with retry logic"""
     try:
-        return ChatGroq(
+        return create_groq_client(
             model_name="llama-3.3-70b-versatile",
-            temperature=0.8, # Higher temperature for more creative/fun responses
-            groq_api_key=get_current_api_key()
+            temperature=0.8  # Higher temperature for more creative/fun responses
         )
     except Exception as e:
         print(f"Error initializing Groq: {e}")

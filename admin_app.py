@@ -13,6 +13,7 @@ from rag import ingest_document
 from db import get_all_documents, delete_document_metadata, init_db, get_logs
 from vector_store import delete_document_embeddings
 from db_schema_v2 import create_enhanced_schema, get_all_employees
+from guardrails import ContentFilter, InputValidator, SecurityLogger, SecurityConfig
 from workflow_engine import LeaveWorkflowEngine, ChatEscalationEngine
 
 # Ensure DBs are initialized
@@ -21,10 +22,13 @@ create_enhanced_schema()
 
 # Global styles: custom CSS + Bootstrap
 try:
-    with open("styles/welcome.css") as f:
+    css_path = os.path.join(os.path.dirname(__file__), "styles", "welcome.css")
+    with open(css_path) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 except FileNotFoundError:
-    pass
+    pass  # CSS file not found, continue without custom styles
+except Exception as e:
+    st.warning(f"Could not load CSS: {e}")
 
 st.markdown(
     """
@@ -336,7 +340,16 @@ elif nav_option == "Settings":
     st.title("⚙️ System Settings")
     
     st.subheader("AI Model Configuration")
-    model_options = ["models/gemini-1.5-flash", "models/gemini-2.5-flash", "models/gemini-1.5-pro"]
+    model_options = [
+        "models/gemini-1.5-flash", 
+        "models/gemini-2.5-flash", 
+        "models/gemini-1.5-pro",
+        # Groq Models
+        "groq/llama3-8b-8192",
+        "groq/llama3-70b-8192", 
+        "groq/mixtral-8x7b-32768",
+        "groq/gemma-7b-it"
+    ]
     default_model = "models/gemini-1.5-flash"
     
     config_path = "config.json"
@@ -348,7 +361,20 @@ elif nav_option == "Settings":
             except json.JSONDecodeError:
                 pass
 
-    selected_model = st.selectbox("Choose Gemini Model", model_options, index=model_options.index(default_model))
+    selected_model = st.selectbox("Choose AI Model", model_options, index=model_options.index(default_model) if default_model in model_options else 0)
+    
+    # Display model information
+    col1, col2 = st.columns(2)
+    with col1:
+        if "groq/" in selected_model:
+            st.info(f"🚀 **Groq Model Selected**: {selected_model}")
+        else:
+            st.info(f"🧠 **Gemini Model Selected**: {selected_model}")
+    
+    with col2:
+        if st.button("🔄 Test Connection"):
+            st.write("Testing model connection...")
+            # Add model testing logic here if needed
     
     if st.button("Save Configuration"):
         with open(config_path, "w") as f:

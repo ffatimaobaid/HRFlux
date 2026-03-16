@@ -65,6 +65,29 @@ except ImportError:
     WORKFLOW_ENGINE_AVAILABLE = False
     print("Workflow engine not available. Using legacy leave request handling.")
 
+def validate_hr_query(question: str) -> tuple[bool, Optional[str]]:
+    """Validate if question is HR-related."""
+    prohibited_topics = [
+        'tesla', 'elon musk', 'spacex', 'amazon', 'apple', 'google', 'microsoft',
+        'celebrity', 'ceo', 'owner', 'ownership', 'who is', 'what is',
+        'general knowledge', 'trivia', 'news', 'politics', 'technology',
+        'science', 'history', 'geography', 'sports', 'entertainment'
+    ]
+    
+    question_lower = question.lower()
+    
+    # Check for prohibited topics
+    for topic in prohibited_topics:
+        if topic in question_lower:
+            return False, f"This appears to be about {topic}, which is outside my HR domain. I can only help with HR-related questions such as policies, leave requests, benefits, and company procedures."
+    
+    # Check if it's a simple greeting vs HR question
+    simple_greetings = ['hi', 'hello', 'hey', 'good morning', 'good afternoon']
+    if question_lower.strip() in simple_greetings and len(question.split()) <= 2:
+        return True, "Hello! How can I help you with HR-related matters today?"
+    
+    return True, None
+
 def run_agent(user, question, model_name="models/gemini-1.5-flash", context_chunks=None):
     # Import the new shim for our unified LangGraph assistant
     from supervisor_workflow import invoke_agent_legacy
@@ -73,6 +96,16 @@ def run_agent(user, question, model_name="models/gemini-1.5-flash", context_chun
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     try:
+        # Validate the query first
+        is_valid, error_message = validate_hr_query(question)
+        
+        if not is_valid:
+            print(f"DEBUG: Query validation failed: {error_message}")
+            return {
+                "answer": error_message,
+                "suggestions": []
+            }
+        
         # The legacy shim expects a state dict with 'messages' and 'username'
         from langchain_core.messages import HumanMessage
         state = {

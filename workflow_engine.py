@@ -6,6 +6,7 @@ Handles leave request approvals, balance validation, and escalations
 import sqlite3
 from datetime import datetime, timedelta
 from db_schema_v2 import get_employee, get_leave_balance, update_leave_balance
+from guardrails import ContentFilter, InputValidator, SecurityLogger
 
 DB_PATH = "queries.db"
 
@@ -28,13 +29,42 @@ class LeaveWorkflowEngine:
     
     
     @staticmethod
-    def validate_leave_request(employee_id, leave_type, start_date, end_date):
+    def validate_leave_request(employee_id, leave_type, start_date, end_date, reason):
         """
-        Validate if employee has sufficient leave balance.
+        Validate if employee has sufficient leave balance with content filtering.
         
         Returns:
             dict: {'valid': bool, 'message': str, 'days_required': int, 'balance': int}
         """
+        # Apply content filtering to reason
+        content_filter = ContentFilter.filter_content(reason)
+        if not content_filter['allowed']:
+            SecurityLogger.log_security_event('inappropriate_leave_reason', {
+                'employee_id': employee_id,
+                'original_reason': reason,
+                'sanitized_reason': content_filter['sanitized_text'],
+                'filter_results': content_filter
+            })
+            
+            return {
+                'valid': False,
+                'message': 'Inappropriate content detected in leave reason',
+                'days_required': 0,
+                'balance': 0
+            }
+        
+        # Validate reason length and content
+        validation = InputValidator.validate_leave_request(employee_id, leave_type, start_date, end_date, content_filter['sanitized_text'])
+        
+        if not validation['valid']:
+            SecurityLogger.log_security_event('leave_validation_failed', {
+                'employee_id': employee_id,
+                'validation_errors': validation['errors'],
+                'sanitized_reason': content_filter['sanitized_text']
+            })
+            
+            return validation
+        
         days_required = LeaveWorkflowEngine.calculate_leave_days(start_date, end_date)
         balances = get_leave_balance(employee_id)
         
