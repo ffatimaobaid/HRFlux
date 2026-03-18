@@ -129,11 +129,65 @@ def run_agent(user, question, model_name="models/gemini-1.5-flash", context_chun
         # Extract the final answer
         final_answer = result["messages"][-1].content
         
+        # Check if the response contains JSON (document generation)
+        suggestions = []
+        try:
+            # Try to parse JSON response for document generation
+            if "{" in final_answer and "}" in final_answer:
+                import json
+                import os
+                # Extract JSON from the response
+                json_start = final_answer.find("{")
+                json_end = final_answer.rfind("}") + 1
+                json_str = final_answer[json_start:json_end]
+                
+                response_data = json.loads(json_str)
+                
+                # Handle document generation response
+                if response_data.get("status") == "success":
+                    document_title = response_data.get("title", "Document")
+                    document_type = response_data.get("document_type", "Document")
+                    employee_data = response_data.get("employee_data", {})
+                    pdf_path = response_data.get("pdf_path", "")
+                    
+                    # Create user-friendly message with download info
+                    user_message = f"✅ **{document_title}** has been generated successfully!\n\n"
+                    user_message += f"**Document Details:**\n"
+                    user_message += f"• Type: {document_type}\n"
+                    user_message += f"• Employee: {employee_data.get('Employee Name', 'N/A')}\n"
+                    user_message += f"• ID: {employee_data.get('Employee ID', 'N/A')}\n"
+                    user_message += f"• Designation: {employee_data.get('Designation', 'N/A')}\n\n"
+                    
+                    # Add download information
+                    if pdf_path and os.path.exists(pdf_path):
+                        # Store the full response data for download handling
+                        try:
+                            import streamlit as st
+                            st.session_state.last_document_response = response_data
+                        except:
+                            pass  # Streamlit not available in this context
+                        
+                        user_message += f"📥 **Download Available:** Your document has been generated and is ready for download.\n\n"
+                        user_message += f"💡 **Where to find it:** The PDF has been saved to your documents folder."
+                    else:
+                        user_message += f"⚠️ **Note:** PDF file generation completed. Check your documents folder."
+                    
+                    user_message += f"\n\nYour document has been personalized with your employee data and is ready for use."
+                    
+                    final_answer = user_message
+                    
+                elif response_data.get("status") == "error":
+                    error_msg = response_data.get("error", "Unknown error occurred")
+                    final_answer = f"❌ **Document Generation Failed:**\n\n{error_msg}\n\nPlease try again or contact HR support."
+                
+        except (json.JSONDecodeError, Exception):
+            # Not a JSON response, handle normally
+            pass
+        
         # Log it
         save_log(user, question, final_answer)
         
         # Determine suggestions based on the final answer
-        suggestions = []
         if "I'm here to help with HR-related" in final_answer or "completely unrelated" in final_answer:
             suggestions = get_similar_questions(question, FAQ_QUESTIONS, top_n=3)
         

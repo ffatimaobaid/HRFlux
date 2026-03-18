@@ -455,6 +455,79 @@ else:
             with st.chat_message("assistant"):
                 st.markdown(answer)
                 
+                # Check if there's a document response to handle
+                if hasattr(st.session_state, 'last_document_response'):
+                    document_response = st.session_state.last_document_response
+                    
+                    if document_response.get("status") == "success":
+                        # Handle document display and download
+                        pdf_path = document_response.get('pdf_path', '')
+                        document_type = document_response.get('document_type', 'Document')
+                        document_title = document_response.get('title', 'Document')
+                        
+                        if pdf_path and os.path.exists(pdf_path):
+                            # Use enhanced PDF display
+                            try:
+                                from pdf_display_utils import enhanced_pdf_display
+                                enhanced_pdf_display(pdf_path, document_title)
+                            except ImportError:
+                                # Fallback to simple display
+                                st.info("📄 PDF Document Generated")
+                                
+                                # Create two columns for view and download
+                                col1, col2 = st.columns(2)
+                                
+                                with col1:
+                                    # Simple preview using popover
+                                    with st.popover("👁️ View PDF", use_container_width=True):
+                                        try:
+                                            import base64
+                                            with open(pdf_path, "rb") as pdf_file:
+                                                base64_pdf = base64.b64encode(pdf_file.read()).decode('utf-8')
+                                            
+                                            # Simple iframe embed
+                                            pdf_display = f'''
+                                            <iframe src="data:application/pdf;base64,{base64_pdf}" 
+                                                    width="100%" height="500px" type="application/pdf">
+                                            </iframe>
+                                            '''
+                                            st.markdown(pdf_display, unsafe_allow_html=True)
+                                            st.info("📄 PDF Preview - Scroll to view full document")
+                                            
+                                        except Exception as e:
+                                            st.error(f"Error displaying PDF: {str(e)}")
+                                            st.write(f"📁 File: {os.path.basename(pdf_path)}")
+                                            st.write(f"📊 Size: {os.path.getsize(pdf_path)} bytes")
+                                
+                                with col2:
+                                    # Download Button
+                                    try:
+                                        with open(pdf_path, 'rb') as pdf_file:
+                                            pdf_data = pdf_file.read()
+                                        
+                                        filename = os.path.basename(pdf_path)
+                                        st.download_button(
+                                            label=f"📥 Download {document_type}",
+                                            data=pdf_data,
+                                            file_name=filename,
+                                            mime="application/pdf",
+                                            key=f"download_{filename}_{datetime.now().timestamp()}",
+                                            use_container_width=True
+                                        )
+                                        
+                                        # Show file info
+                                        st.write(f"📄 {document_title}")
+                                        st.write(f"📊 {os.path.getsize(pdf_path):,} bytes")
+                                        
+                                    except Exception as e:
+                                        st.error(f"Error preparing download: {str(e)}")
+                        
+                        else:
+                            st.error("❌ PDF file not found. Please try generating the document again.")
+                        
+                        # Clear the document response after handling
+                        del st.session_state.last_document_response
+                
                 # Show suggestions if available
                 if suggestions:
                     st.markdown("**Did you mean:**")

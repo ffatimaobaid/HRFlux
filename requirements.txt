@@ -42,3 +42,9 @@ torchvision
 pytest
 pytest-mock
 reportlab
+
+# PDF Generation
+weasyprint
+pdfkit
+jinja2
+# wkhtmltopdf (system dependency - needs to be installed separately)
