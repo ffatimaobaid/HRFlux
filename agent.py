@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import Optional
 from rag import retrieve_context
 from gemini_llm import query_gemini, FAQ_QUESTIONS, get_similar_questions
 from db import save_log, get_recent_history, get_document_filenames_by_ids
@@ -66,26 +67,60 @@ except ImportError:
     print("Workflow engine not available. Using legacy leave request handling.")
 
 def validate_hr_query(question: str) -> tuple[bool, Optional[str]]:
-    """Validate if question is HR-related."""
-    prohibited_topics = [
-        'tesla', 'elon musk', 'spacex', 'amazon', 'apple', 'google', 'microsoft',
-        'celebrity', 'ceo', 'owner', 'ownership', 'who is', 'what is',
-        'general knowledge', 'trivia', 'news', 'politics', 'technology',
-        'science', 'history', 'geography', 'sports', 'entertainment'
-    ]
-    
-    question_lower = question.lower()
-    
-    # Check for prohibited topics
-    for topic in prohibited_topics:
-        if topic in question_lower:
-            return False, f"This appears to be about {topic}, which is outside my HR domain. I can only help with HR-related questions such as policies, leave requests, benefits, and company procedures."
-    
-    # Check if it's a simple greeting vs HR question
-    simple_greetings = ['hi', 'hello', 'hey', 'good morning', 'good afternoon']
-    if question_lower.strip() in simple_greetings and len(question.split()) <= 2:
-        return True, "Hello! How can I help you with HR-related matters today?"
-    
+    """
+    Validate whether the question is HR-related using a Groq LLM classifier.
+    Returns (is_valid, optional_message).
+    """
+    # Short-circuit for simple greetings — always allow
+    simple_greetings = {'hi', 'hello', 'hey', 'good morning', 'good afternoon', 'good evening'}
+    if question.lower().strip() in simple_greetings:
+        return True, None
+
+    try:
+        from chat_groq_with_retry import create_chat_groq_with_retry
+
+        llm = create_chat_groq_with_retry(
+            model_name="llama-3.3-70b-versatile",
+            temperature=0,
+            max_tokens=10   # We only need one word back
+        )
+
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a query classifier for a company HR chatbot. "
+                    "Determine if the user query is HR-related or not.\n\n"
+                    "HR topics include: leave requests, attendance, salary, payroll, policies, "
+                    "benefits, onboarding, offboarding, grievances, performance reviews, "
+                    "document requests (NOC, experience letter, salary certificate), "
+                    "company rules, and general workplace/employment matters.\n\n"
+                    "Non-HR topics include: general knowledge, science, math, coding, news, "
+                    "weather, celebrity gossip, sports, recipes, jokes, and anything not related "
+                    "to employment or the workplace.\n\n"
+                    "Reply with ONLY one word — HR or NON_HR."
+                )
+            },
+            {"role": "user", "content": question},
+        ]
+
+        result = llm.invoke(messages)
+        classification = (result.content or "").strip().upper()
+
+        if classification.startswith("NON_HR"):
+            refusal = (
+                "I'm HRFLUX, your dedicated HR assistant. I can only help with HR-related topics such as:\n"
+                "• 🏖️ Leave requests and balance\n"
+                "• 📋 HR policies, benefits, and company rules\n"
+                "• 📄 Official documents (NOC, experience letter, salary certificate)\n"
+                "• 🚨 Employee grievances and escalations\n\n"
+                "Please ask me something related to your workplace or HR matters!"
+            )
+            return False, refusal
+
+    except Exception as e:
+        logger.warning(f"HR query classifier failed, allowing query through: {e}")
+
     return True, None
 
 def run_agent(user, question, model_name="models/gemini-1.5-flash", context_chunks=None):
@@ -101,10 +136,7 @@ def run_agent(user, question, model_name="models/gemini-1.5-flash", context_chun
         
         if not is_valid:
             print(f"DEBUG: Query validation failed: {error_message}")
-            return {
-                "answer": error_message,
-                "suggestions": []
-            }
+            return error_message, []
         
         # The legacy shim expects a state dict with 'messages' and 'username'
         from langchain_core.messages import HumanMessage

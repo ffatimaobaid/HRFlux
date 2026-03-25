@@ -68,7 +68,7 @@ st.sidebar.title("HRFlux Admin")
 st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", width=100)
 nav_option = st.sidebar.radio(
     "Navigation", 
-    ["Dashboard", "Query Logs", "Escalations", "Document Manager", "Settings"]
+    ["Dashboard", "Query Logs", "Escalations", "Document Manager", "Settings", "🤖 Admin Chat"]
 )
 
 st.sidebar.markdown("---")
@@ -380,4 +380,78 @@ elif nav_option == "Settings":
         with open(config_path, "w") as f:
             json.dump({"model": selected_model}, f)
         st.success(f"Model updated to: {selected_model}")
+
+# --- 6. Admin Chat Module ---
+elif nav_option == "🤖 Admin Chat":
+    st.title("🤖 Admin AI Assistant")
+    st.caption(
+        "Ask questions about your HR data in plain English — leave requests, "
+        "escalations, employee info, logs, and more."
+    )
+
+    # Import agent (lazy — only when this tab is open)
+    try:
+        from admin_bot_agent import invoke_admin_agent
+        ADMIN_BOT_READY = True
+    except Exception as _e:
+        st.error(f"Failed to load Admin Bot: {_e}")
+        ADMIN_BOT_READY = False
+
+    if ADMIN_BOT_READY:
+        # Initialise chat history for admin bot
+        if "admin_chat_history" not in st.session_state:
+            st.session_state.admin_chat_history = []
+
+        # Quick action buttons
+        st.markdown("**Quick Actions:**")
+        qa_cols = st.columns(4)
+        quick_actions = [
+            "📊 Dashboard summary",
+            "📋 Show pending leaves",
+            "🚨 Open escalations",
+            "👥 List employees",
+        ]
+        for idx, (col, action) in enumerate(zip(qa_cols, quick_actions)):
+            with col:
+                if st.button(action, key=f"qa_{idx}", use_container_width=True):
+                    st.session_state["admin_pending_query"] = action
+
+        st.markdown("---")
+
+        # Chat history display
+        chat_box = st.container(height=480)
+        with chat_box:
+            for role, msg in st.session_state.admin_chat_history:
+                with st.chat_message(role):
+                    st.markdown(msg)
+
+        # Handle pending quick-action query or user input
+        if "admin_pending_query" in st.session_state:
+            user_input = st.session_state.pop("admin_pending_query")
+        else:
+            user_input = st.chat_input(
+                "Ask the Admin Bot anything — e.g. 'Approve leave #3' or 'Show pending escalations'",
+                key="admin_chat_input",
+            )
+
+        if user_input:
+            # Show user message immediately
+            with chat_box:
+                with st.chat_message("user"):
+                    st.markdown(user_input)
+                with st.chat_message("assistant"):
+                    with st.spinner("Thinking..."):
+                        response = invoke_admin_agent(user_input)
+                    st.markdown(response)
+
+            # Persist to session history
+            st.session_state.admin_chat_history.append(("user", user_input))
+            st.session_state.admin_chat_history.append(("assistant", response))
+            st.rerun()
+
+        # Clear chat button
+        if st.session_state.admin_chat_history:
+            if st.button("🗑️ Clear Chat", key="admin_clear_chat"):
+                st.session_state.admin_chat_history = []
+                st.rerun()
 

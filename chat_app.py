@@ -244,86 +244,58 @@ else:
     emp_id = employee_data['employee_id'] if employee_data else None
     employee_name = employee_data['full_name'] if employee_data else user
 
-    # Top Navigation / Notification Bar
-    nav_col1, nav_col2, nav_col3 = st.columns([6, 1, 1])
-    with nav_col1:
-        st.title("HR Assistant & Productivity Dashboard")
-        
-    with nav_col2:
-        # Notifications Popover
-        pending_tasks = []
-        immediate_tasks = []
-        upcoming_tasks = []
-        if emp_id:
-            all_pending = [t for t in get_employee_tasks(emp_id) if t['status'] == 'pending']
-            
-            import datetime
-            today_str = str(datetime.date.today())
-            
-            # Split tasks
-            for t in all_pending:
-                if t['deadline'] and t['deadline'] <= today_str:
-                    immediate_tasks.append(t)
-                else:
-                    upcoming_tasks.append(t)
-            
-            pending_tasks = all_pending # all of them
-            
-        # The red icon bubble only counts immediate items
-        badge_count = len(immediate_tasks)
-        
-        with st.popover(f"🔔 Notifications ({badge_count})"):
-            if immediate_tasks:
-                st.write("**🚨 Due Today / Overdue:**")
-                # Separate meetings from other tasks
-                immediate_meetings = [t for t in immediate_tasks if t['event_type'] == 'meeting']
-                immediate_other = [t for t in immediate_tasks if t['event_type'] != 'meeting']
-                
-                # Show meetings first with special icon
-                for t in immediate_meetings:
-                    st.error(f"🤝 {t['title']} (Meeting - Due: {t['deadline']})")
-                
-                # Show other tasks
-                for t in immediate_other:
-                    st.error(f"- {t['title']} (Due: {t['deadline']})")
-                
-                # Only toast for immediate tasks
-                if "notification_shown" not in st.session_state:
-                    st.session_state.notification_shown = True
-                    notif = generate_creative_notification(employee_name, immediate_tasks)
-                    st.toast(notif, icon="🚨")
-                    st.success(f"**AI Motivation:** {notif}")
+    # ── Sidebar Navigation (mirrors admin side) ─────────────────────────────
+    st.sidebar.title("HRFLUX Employee")
+    st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", width=80)
+    st.sidebar.markdown(f"👋 **{employee_name}**")
+
+    # Build notification badge for sidebar
+    import datetime
+    today_str = str(datetime.date.today())
+    immediate_tasks, upcoming_tasks = [], []
+    if emp_id:
+        all_pending = [t for t in get_employee_tasks(emp_id) if t['status'] == 'pending']
+        for t in all_pending:
+            if t['deadline'] and t['deadline'] <= today_str:
+                immediate_tasks.append(t)
             else:
-                st.write("No tasks due today! 🎉")
-                # Ensure we don't trigger the toast over and over when they have 0
+                upcoming_tasks.append(t)
+    badge_count = len(immediate_tasks)
+
+    nav_option = st.sidebar.radio(
+        "Navigation",
+        ["💬 Chat", "📅 Calendar & Tasks", "👤 My Profile"],
+    )
+
+    # Notifications expander in sidebar
+    with st.sidebar.expander(f"🔔 Notifications ({badge_count})", expanded=False):
+        if immediate_tasks:
+            st.write("**🚨 Due Today / Overdue:**")
+            for t in immediate_tasks:
+                icon = "🤝" if t['event_type'] == 'meeting' else "⚠️"
+                st.error(f"{icon} {t['title']} (Due: {t['deadline']})")
+            if "notification_shown" not in st.session_state:
                 st.session_state.notification_shown = True
+                notif = generate_creative_notification(employee_name, immediate_tasks)
+                st.toast(notif, icon="🚨")
+        else:
+            st.write("No tasks due today! 🎉")
+            st.session_state.notification_shown = True
+        if upcoming_tasks:
+            st.write("---")
+            st.write("**📅 Upcoming:**")
+            for t in upcoming_tasks[:3]:
+                st.info(f"- {t['title']} ({t['deadline']})")
 
-            if upcoming_tasks:
-                st.write("---")
-                st.write("**📅 Upcoming Tasks:**")
-                # Separate meetings from other tasks
-                upcoming_meetings = [t for t in upcoming_tasks if t['event_type'] == 'meeting']
-                upcoming_other = [t for t in upcoming_tasks if t['event_type'] != 'meeting']
-                
-                # Show meetings first with special icon
-                if upcoming_meetings:
-                    st.write("**🤝 Upcoming Meetings:**")
-                    for t in upcoming_meetings[:3]: # limit to next 3 meetings
-                        st.info(f"🤝 {t['title']} (Meeting - {t['deadline']})")
-                
-                # Show other tasks
-                if upcoming_other:
-                    st.write("**📋 Other Tasks:**")
-                    for t in upcoming_other[:3]: # limit to next 3 other tasks
-                        st.info(f"- {t['title']} (Due: {t['deadline']})")
-                
-    with nav_col3:
-        if st.button("Clear Chat", help="Clear conversation history"):
-            st.session_state.chat_history = []
-            delete_user_history(user)
-            st.rerun()
+    st.sidebar.markdown("---")
+    if st.sidebar.button("🗑️ Clear Chat", help="Clear conversation history"):
+        st.session_state.chat_history = []
+        delete_user_history(user)
+        st.rerun()
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("© 2024 HRFlux System")
 
-    # Load selected model silently
+    # Load model config
     model = "models/gemini-1.5-flash"
     if os.path.exists("config.json"):
         with open("config.json", "r") as f:
@@ -333,14 +305,28 @@ else:
             except json.JSONDecodeError:
                 pass
 
-    # Main Dashboard Layout
-    main_col1, main_col2 = st.columns([1.2, 1])
-
-    with main_col1:
+    # ── Page: Chat ───────────────────────────────────────────────────────────
+    if nav_option == "💬 Chat":
         st.subheader("🤖 Chat Assistant")
-        
+
+        # Quick action buttons — same pattern as Admin Chat
+        st.markdown("**Quick Actions:**")
+        qa_col1, qa_col2, qa_col3, qa_col4 = st.columns(4)
+        employee_quick_actions = [
+            (qa_col1, "🏖️ My leave balance"),
+            (qa_col2, "📋 Apply for leave"),
+            (qa_col3, "📄 Request a document"),
+            (qa_col4, "🚨 Report an issue"),
+        ]
+        for col, action in employee_quick_actions:
+            with col:
+                if st.button(action, use_container_width=True, key=f"emp_qa_{action}"):
+                    st.session_state["pending_question"] = action
+
+        st.markdown("---")
+
         # Chat history container
-        chat_container = st.container(height=500)
+        chat_container = st.container(height=460)
         
         # Load previous chat history from DB into session state
         if "chat_history" not in st.session_state:
@@ -423,17 +409,14 @@ else:
         with chat_container:
             with st.chat_message("user"):
                 st.markdown(sanitized_question)
-            
-            # Show typing indicator
-            with st.chat_message("assistant"):
-                st.write("Thinking...")
-        
+
         try:
-            # Get recent context (24 hours) for chat continuity (not for retrieval)
+            # Get recent context for chat continuity
             context = get_recent_context(user)
 
-            # Generate answer and suggestions (let run_agent handle retrieval and query expansion)
-            answer, suggestions = run_agent(user, question, model)
+            # Run agent with a visible spinner
+            with st.spinner("🤔 Thinking..."):
+                answer, suggestions = run_agent(user, question, model)
             print("Suggestions returned from run_agent:", suggestions)
         except Exception:
             traceback.print_exc()
@@ -449,11 +432,12 @@ else:
 
         # Update chat history in session
         st.session_state.chat_history.append((question, answer, suggestions))
-        
+
         # Display assistant's response
         with chat_container:
             with st.chat_message("assistant"):
                 st.markdown(answer)
+
                 
                 # Check if there's a document response to handle
                 if hasattr(st.session_state, 'last_document_response'):
@@ -541,7 +525,8 @@ else:
         # Rerun to display the updated chat history
         st.rerun()
 
-    with main_col2:
+    # ── Page: Calendar & Tasks ───────────────────────────────────────────────
+    elif nav_option == "📅 Calendar & Tasks":
         st.subheader("📅 My Calendar & Tasks")
         
         if not emp_id:
@@ -806,3 +791,38 @@ else:
                     if st.button(f"Mark Complete: {t['title']}", key=f"complete_{t['id']}", use_container_width=True):
                         update_employee_task_status(t['id'], 'completed')
                         st.rerun()
+
+    # ── Page: My Profile ────────────────────────────────────────────────────
+    elif nav_option == "👤 My Profile":
+        st.title("👤 My Profile")
+        if not employee_data:
+            st.warning("Could not load your employee profile. Please contact HR.")
+        else:
+            col_info, col_leave = st.columns(2)
+            with col_info:
+                st.subheader("Personal Information")
+                fields = [
+                    ("Full Name",    employee_data.get('full_name', 'N/A')),
+                    ("Employee ID",  employee_data.get('employee_id', 'N/A')),
+                    ("Department",   employee_data.get('department', 'N/A')),
+                    ("Designation",  employee_data.get('designation', 'N/A')),
+                    ("Email",        employee_data.get('email', user)),
+                    ("Phone",        employee_data.get('phone', 'N/A')),
+                    ("Date Joined",  employee_data.get('date_joined', 'N/A')),
+                ]
+                for label, value in fields:
+                    st.markdown(f"**{label}:** {value}")
+
+            with col_leave:
+                st.subheader("Leave Balances")
+                try:
+                    from db_schema_v2 import get_leave_balance
+                    balances = get_leave_balance(emp_id) if emp_id else {}
+                    if balances:
+                        st.metric("🏖️ Annual Leave",  f"{balances.get('annual', 0)} days")
+                        st.metric("🤒 Sick Leave",    f"{balances.get('sick', 0)} days")
+                        st.metric("📋 Casual Leave",  f"{balances.get('casual', 0)} days")
+                    else:
+                        st.info("Leave balance not available.")
+                except Exception as e:
+                    st.warning(f"Could not load leave balance: {e}")
