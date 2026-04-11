@@ -16,15 +16,16 @@ def get_avg_tokens_per_chunk(texts):
         return 0
 
     try:
-        encodings = tokenizer.batch_encode_plus(
-            texts, add_special_tokens=False, return_attention_mask=False
-        )
-        token_counts = [len(ids) for ids in encodings['input_ids']]
-        avg_tokens = sum(token_counts) // len(token_counts)
-        return avg_tokens
+        # Use __call__ which is most robust across transformer versions
+        encodings = [tokenizer.encode(t, add_special_tokens=False) for t in texts]
+        token_counts = [len(ids) for ids in encodings]
+        avg_tokens = sum(token_counts) / len(token_counts) if token_counts else 0
+        return round(avg_tokens, 2)
     except Exception as e:
         print(f"[Token Counting Error] {e}")
-        return 0
+        # Fallback to character-based estimation if tokenizer fails
+        chars = sum(len(t) for t in texts)
+        return round((chars / 4) / len(texts), 2)
 
 def chunk_text_token_aware(text, max_tokens=MAX_TOKENS, overlap=OVERLAP_TOKENS):
     """

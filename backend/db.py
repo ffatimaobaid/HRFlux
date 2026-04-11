@@ -130,13 +130,18 @@ def get_document_filenames_by_ids(doc_ids):
 
 
 def add_document_chunks(doc_id, chunks, embeddings=None):
+    import json
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     for i, chunk in enumerate(chunks):
-        embedding = embeddings[i] if embeddings else None
+        embedding_val = None
+        if embeddings and i < len(embeddings):
+            # Serialize for SQLite BLOB storage
+            embedding_val = json.dumps(embeddings[i])
+            
         c.execute(
             "INSERT INTO document_chunks (doc_id, text, embedding) VALUES (?, ?, ?)",
-            (doc_id, chunk, embedding)
+            (doc_id, chunk, embedding_val)
         )
     conn.commit()
     conn.close()

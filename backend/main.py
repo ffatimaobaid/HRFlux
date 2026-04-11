@@ -889,4 +889,4 @@ if __name__ == "__main__":
     print("🚀 Starting HRFlux API Server...")
     print("📖 API Documentation: http://localhost:8000/docs")
     print("🔧 Interactive API: http://localhost:8000/redoc")
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)

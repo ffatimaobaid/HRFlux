@@ -11,7 +11,7 @@ nltk
 pandas
 unstructured
 langchain-google-genai
-clip-by-openai
+git+https://github.com/openai/CLIP.git
 openai-whisper
 speechrecognition
 pydub
@@ -54,3 +54,6 @@ weasyprint
 pdfkit
 jinja2
 # wkhtmltopdf (system dependency - needs to be installed separately)
+langgraph
+langchain-groq
+apscheduler

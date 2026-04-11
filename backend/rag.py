@@ -9,8 +9,8 @@ from io import BytesIO
 
 from embedder import model
 from chunking import hybrid_chunk_document, get_avg_tokens_per_chunk, chunk_text_token_aware
-from vector_store import add_document_chunks, search_context
-from db import save_document_metadata
+from vector_store import add_document_chunks as add_vector_chunks, search_context
+from db import save_document_metadata, add_document_chunks as add_db_chunks
 from keyword_search import keyword_search  # <- required for hybrid retrieval
 from multimodal_processor import multimodal_processor
 
@@ -119,8 +119,8 @@ def ingest_multimodal_document(file_path):
         # Embed synchronously
         from embedder import model
         embeddings = [model.encode([c])[0].tolist() for c in chunks]
-        
-        add_document_chunks(doc_id, chunks, embeddings)
+        add_vector_chunks(doc_id, chunks, embeddings)
+        add_db_chunks(doc_id, chunks, embeddings)
         avg_tokens = get_avg_tokens_per_chunk(chunks)
         save_document_metadata(doc_id, os.path.basename(file_path), avg_tokens)
 
@@ -195,7 +195,8 @@ def ingest_document(file_path):
         else:
              embeddings = [[0.0]*384 for _ in chunks]
 
-        add_document_chunks(doc_id, chunks, embeddings)
+        add_vector_chunks(doc_id, chunks, embeddings)
+        add_db_chunks(doc_id, chunks, embeddings)
         avg_tokens = get_avg_tokens_per_chunk(chunks)
         save_document_metadata(doc_id, os.path.basename(file_path), avg_tokens)
 
