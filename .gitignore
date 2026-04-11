@@ -24,3 +24,18 @@ Thumbs.db
 # Large temporary files (can be regenerated)
 *.tmp
 *.temp
+
+# HRFlux Custom Ignores - SECURITY SENSITIVE
+backend/config.py
+backend/queries.db
+*.db
+*.sqlite3
+backend/venv/
+node_modules/
+.env
+.next/
+dist/
+build/
+*.mp3
+*.mp4
+*.bak

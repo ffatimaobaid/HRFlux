@@ -1,0 +1,82 @@
+<div class="workflow-page">
+  <div class="leave-request-container">
+    <!-- Leave Request Form -->
+    <div class="leave-request-card">
+      <h2 class="leave-request-title">Apply for Leave</h2>
+      <p class="leave-request-subtitle">Submit your leave request and it will be reviewed by the admin.</p>
+      
+      <form id="leaveRequestForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="leaveType">Leave Type</label>
+            <select class="form-select" id="leaveType" required>
+              <option value="">Select leave type</option>
+              <option value="sick">Sick Leave</option>
+              <option value="casual">Casual Leave</option>
+              <option value="vacation">Vacation</option>
+              <option value="maternity">Maternity Leave</option>
+              <option value="paternity">Paternity Leave</option>
+              <option value="emergency">Emergency Leave</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="startDate">Start Date</label>
+            <input type="date" class="form-input" id="startDate" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="endDate">End Date</label>
+            <input type="date" class="form-input" id="endDate" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label" for="reason">Reason</label>
+          <textarea class="form-textarea" id="reason" placeholder="Please provide a reason for your leave request..." required></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 12px;">
+          <button type="submit" class="btn-primary">Submit Leave Request</button>
+          <button type="button" class="btn-secondary" onclick="resetForm()">Clear Form</button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Leave History -->
+    <div class="leave-history-card">
+      <h3 class="history-title">Your Leave History</h3>
+      <div id="leaveHistory">
+        <!-- Leave history items will be populated here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function resetForm() {
+  document.getElementById('leaveRequestForm').reset();
+}
+
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  });
+}
+
+function getStatusClass(status) {
+  switch(status.toLowerCase()) {
+    case 'pending': return 'status-pending';
+    case 'approved': return 'status-approved';
+    case 'rejected': return 'status-rejected';
+    default: return 'status-pending';
+  }
+}
+
+function capitalizeFirst(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// Form submission would be handled by Streamlit backend
+</script>

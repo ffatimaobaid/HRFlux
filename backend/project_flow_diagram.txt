@@ -1,0 +1,68 @@
+HR CHATBOT PROJECT FLOW DIAGRAM
+=====================================
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                                USER INTERFACE LAYER                              │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐              │
+│  │   chat_app.py   │    │  admin_app.py   │    │   vision_utils  │              │
+│  │  (Main Chat UI) │    │ (Admin Portal)  │    │   (Optional)    │              │
+│  └─────────────────┘    └─────────────────┘    └─────────────────┘              │
+└─────────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              APPLICATION LAYER                                  │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐              │
+│  │    agent.py     │    │     rag.py      │    │   gemini_llm.py  │              │
+│  │ (Orchestrator)  │    │ (RAG Pipeline)  │    │  (LLM Handler)  │              │
+│  └─────────────────┘    └─────────────────┘    └─────────────────┘              │
+└─────────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              PROCESSING LAYER                                   │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐              │
+│  │   embedder.py   │    │   chunking.py   │    │ keyword_search.py│              │
+│  │ (Text Embedding)│    │ (Document Split)│    │ (Keyword Match)  │              │
+│  └─────────────────┘    └─────────────────┘    └─────────────────┘              │
+└─────────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              STORAGE LAYER                                     │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐              │
+│  │ vector_store.py  │    │     db.py       │    │ context_cache.py│              │
+│  │ (ChromaDB)       │    │   (SQLite)      │    │ (Query Cache)   │              │
+│  └─────────────────┘    └─────────────────┘    └─────────────────┘              │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+DATA FLOW:
+==========
+
+1. DOCUMENT INGESTION (Admin Portal):
+   policy_docs/ → embedder.py → chunking.py → vector_store.py → db.py
+
+2. USER QUERY PROCESSING (Chat Interface):
+   User Input → agent.py → rag.py → vector_store.py + keyword_search.py → gemini_llm.py → Response
+
+3. CONVERSATION MANAGEMENT:
+   chat_app.py → db.py (logs) → context_cache.py → agent.py (context)
+
+KEY COMPONENTS:
+===============
+
+• chat_app.py: Main Streamlit UI with login/signup, chat interface, suggestion buttons
+• admin_app.py: Document upload/management interface
+• agent.py: Central orchestrator handling query classification and response generation
+• rag.py: RAG pipeline with hybrid retrieval (semantic + keyword search)
+• gemini_llm.py: Google Gemini API integration for LLM responses
+• vector_store.py: ChromaDB integration for semantic search
+• db.py: SQLite database for logs, users, documents, leave requests
+• embedder.py: Text extraction and embedding generation
+• chunking.py: Document splitting with token awareness and overlap
+• keyword_search.py: Traditional keyword-based search fallback
+• context_cache.py: Recent conversation context caching

@@ -9,11 +9,17 @@ PyPDF2
 pymupdf
 nltk
 pandas
-pdf2image
 unstructured
-langchain-core
-langgraph
 langchain-google-genai
+clip-by-openai
+openai-whisper
+speechrecognition
+pydub
+soundfile
+moviepy
+imageio-ffmpeg
+librosa
+opencv-python-headless
 
 # FastAPI and workflow engine
 fastapi

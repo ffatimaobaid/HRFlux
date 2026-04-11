@@ -1,0 +1,31 @@
+import os
+
+# Multiple Groq API keys for rotation
+# Add your keys here
+GROQ_API_KEYS = [
+    "YOUR_GROQ_KEY_1",
+    "YOUR_GROQ_KEY_2"
+]
+
+# Standard model configuration
+MODEL_NAME = "llama-3.3-70b-versatile"
+
+# Gemini API Key (Fallback)
+GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
+
+# Database Configuration
+DB_PATH = "queries.db"
+
+# RAG Configuration
+SHOW_SOURCES = True
+
+# Notification Intervals
+NOTIFICATION_POLLING_INTERVAL = 30 # seconds
+
+def get_current_api_key():
+    return GROQ_API_KEYS[0] if GROQ_API_KEYS else None
+
+def rotate_api_key():
+    # Placeholder for rotation logic
+    pass
