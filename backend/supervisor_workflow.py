@@ -40,6 +40,7 @@ You are HRFlux Central Assistant. You help employees with HR policies, leave app
 
 TEMPORAL CONTEXT:
 Always use the 'Current Context' (Date, Day, Time) provided in the user's message to resolve relative dates like "today", "tomorrow", "Tuesday", or "next week". 
+CRITICAL RULE: You are a digital system with 24/7 real-time access to the HR database. Do NOT EVER refuse to process a request (like leave application or checking balance) just because it is a weekend or outside office hours. Everything is fully operational 24/7.
 
 IMPORTANT: You have tools available. When users ask for documents (NOC, salary certificate, experience letter), you MUST call the tool_generate_enhanced_document function. Do NOT just respond with text.
 
@@ -70,11 +71,14 @@ If the question is HR-related but unclear, ask for clarification about the speci
 
 RULES:
 1. Operational Actions (Leaves, Tickets & Meetings):
-   - LEAVE REQUEST FLOW (MANDATORY):
-     1. Check Balance (`tool_get_leave_balance`) to ensure the user has enough days.
-     2. Check Calendar (`tool_get_employee_calendar`). You MUST list any tasks, deadlines, or meetings that occur during or near the requested leave dates.
-     3. Inform the user of these deadlines and ask: "You have [X] scheduled on those dates. Would you like to proceed with the application?"
-     4. Submit Request (`tool_submit_leave_request`) only after confirmation.
+   - LEAVE REQUEST FLOW (MANDATORY — NO EXCEPTIONS):
+     When a user mentions dates or asks to apply for leave, you MUST follow these steps IN ORDER by calling tools. Do NOT respond in text to the user before completing steps 1 and 2.
+     1. IMMEDIATELY call `tool_get_leave_balance` with the username. Do NOT ask the user to check their own balance.
+     2. IMMEDIATELY call `tool_get_employee_calendar` with the username. Check if any tasks, meetings, or deadlines fall on or near the requested dates.
+     3. Report results to the user: show their balance AND any calendar conflicts found.
+     4. If there are calendar conflicts, WARN the user ("You have [X] scheduled on those dates") and ask if they still want to proceed.
+     5. If no conflicts, or after user confirms they want to proceed, call `tool_submit_leave_request` to formally submit.
+     ABSOLUTE RULE: NEVER ask the user to "confirm they have enough balance" or "check the policy themselves". YOU check it with tools. If you respond in text without first calling tools, you have failed.
    - LEAVE REASONS: Be helpful and efficient. Brief reasons like "out of station", "personal work", "family event", or "medical checkup" are sufficient. Do NOT repeatedly ask for "more detail" if a clear reason is given.
    - ESCALATIONS (Conversational Intake — MANDATORY FLOW):
      When an employee mentions a grievance, complaint, harassment, payroll issue, or any workplace problem,
@@ -111,8 +115,11 @@ RULES:
    - ESCALATIONS (Checking Status): If the user asks about their ticket status, complaint status, or wants to see their escalations, call `tool_get_my_escalations` with their username.
    - MEETING SCHEDULING: FIRST call `tool_schedule_meeting` with just the username to understand what information is needed. Then ask the user for specific details (title, date, time, participants) before calling again with all parameters.
 
-2. Policy Queries:
-   - Use `tool_search_hr_policy` to look up rules, timings, and guidelines before answering.
+2. Policy Queries (MANDATORY RAG):
+   - When a user asks about company rules, timings, dress code, guidelines, or ANY HR policy, you MUST call `tool_search_hr_policy` to retrieve the facts BEFORE answering. Do NOT guess.
+
+3. Personal Information / Profile Queries:
+   - When a user asks "tell me my information", "who is my manager", "what is my profile", or anything about their own profile, MUST call `tool_get_employee_profile` with their username BEFORE answering. Do NOT say you lack access.
 
 
 3. Document Generation (TWO-STEP MANDATORY FLOW):
@@ -202,32 +209,32 @@ def invoke_agent_legacy(state: AgentStateShim):
     
     config = {"configurable": {"thread_id": f"thread_{user}"}}
     
-    # Check if we should inject history (from DB) into the thread memory
-    # We do this only if the thread is fresh to avoid duplicates
+    # ALWAYS pull the most recent context from SQLite to bypass memory wipes from server reloads
+    history_text = "No previous history."
     try:
-        current_state = hrflux_agent.get_state(config)
-        if not current_state.values or not current_state.values.get("messages"):
-            from db import get_recent_history
-            from langchain_core.messages import AIMessage
-            
-            recent = get_recent_history(user, limit=5)
-            historical_messages = []
+        from db import get_recent_history
+        # Limit to 3 most recent QA pairs to avoid enormous context
+        recent = get_recent_history(user, limit=3)
+        if recent:
+            history_text = ""
             for q, a in recent:
-                historical_messages.append(HumanMessage(content=f"User '{user}' says: {q}"))
-                historical_messages.append(AIMessage(content=a))
-            
-            if historical_messages:
-                hrflux_agent.update_state(config, {"messages": historical_messages})
+                history_text += f"\nUser: {q}\nAI: {a}\n"
     except Exception as e:
-        logger.warning(f"Failed to seed history for thread_{user}: {e}")
+        logger.warning(f"Failed to fetch DB history for thread_{user}: {e}")
 
-    # Send only the latest human message with current context (Date/Time/Day)
+    # Send only the latest human message with current context (Date/Time/Day) AND recent DB history
     now = datetime.now()
     date_str = now.strftime("%Y-%m-%d")
     day_str = now.strftime("%A")
     time_str = now.strftime("%H:%M:%S")
     
-    input_message = HumanMessage(content=f"Current Context: User: '{user}', Date: {date_str}, Day: {day_str}, Time: {time_str}\n\nUser Question: {query}")
+    contextual_prompt = (
+        f"Current Context: User: '{user}', Date: {date_str}, Day: {day_str}, Time: {time_str}\n\n"
+        f"--- Previous Recent Chat History ---\n{history_text}\n----------------------------------\n\n"
+        f"User Question: {query}"
+    )
+    
+    input_message = HumanMessage(content=contextual_prompt)
     
     try:
         # PRIMARY: Attempt Groq Agent invocation
@@ -237,7 +244,7 @@ def invoke_agent_legacy(state: AgentStateShim):
         # FALLBACK: Use Gemini 1.5 Flash directly if Groq fails
         try:
             from gemini_llm import query_gemini
-            fallback_answer = query_gemini([], f"User '{user}' asks: {query} (Note: System context: Date={date_str}, Day={day_str})")
+            fallback_answer = query_gemini([], f"{contextual_prompt}")
             from langchain_core.messages import AIMessage
             result = {"messages": [HumanMessage(content=query), AIMessage(content=fallback_answer)]}
         except Exception as gemini_e:

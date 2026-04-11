@@ -7,16 +7,17 @@ import Sidebar from '@/components/Sidebar';
 import { taskApi, authApi } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Plus, 
-  CheckCircle2, 
-  Clock, 
+import {
+  Plus,
+  CheckCircle2,
+  Clock,
   Calendar as CalIcon,
   Tag,
   AlertCircle,
   CheckCircle,
   ClipboardList,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 
@@ -40,6 +41,7 @@ export default function CalendarPage() {
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [type, setType] = useState('task');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -60,6 +62,8 @@ export default function CalendarPage() {
 
   const addTask = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await taskApi.createTask({
         employee_id: user!.employee_id,
@@ -74,6 +78,8 @@ export default function CalendarPage() {
       loadTasks();
     } catch (err) {
       alert('Failed to add task');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -86,7 +92,7 @@ export default function CalendarPage() {
     }
   };
 
-  const dailyTasks = tasks.filter(t => 
+  const dailyTasks = tasks.filter(t =>
     t.deadline === format(selectedDate, 'yyyy-MM-dd')
   );
 
@@ -97,11 +103,10 @@ export default function CalendarPage() {
         return (
           <div className="flex justify-center gap-0.5 mt-1">
             {dayTasks.slice(0, 3).map((t, i) => (
-              <div 
-                key={i} 
-                className={`w-1.5 h-1.5 rounded-full ${
-                  t.status === 'completed' ? 'bg-green-400' : 'bg-indigo-500'
-                }`} 
+              <div
+                key={i}
+                className={`w-1.5 h-1.5 rounded-full ${t.status === 'completed' ? 'bg-green-400' : 'bg-indigo-500'
+                  }`}
               />
             ))}
           </div>
@@ -114,7 +119,7 @@ export default function CalendarPage() {
   return (
     <div className="flex h-screen bg-[#f8f9ff]">
       <Sidebar />
-      
+
       <main className="flex-1 flex flex-col overflow-hidden p-8">
         <header className="flex items-center justify-between mb-8">
           <div>
@@ -198,7 +203,7 @@ export default function CalendarPage() {
                     >
                       <CalIcon size={48} className="text-gray-200 mb-4" />
                       <p className="text-gray-400 font-medium">No tasks for this day.</p>
-                      <button 
+                      <button
                         onClick={() => setShowAddForm(true)}
                         className="text-indigo-600 text-sm font-bold mt-2 hover:underline"
                       >
@@ -213,17 +218,15 @@ export default function CalendarPage() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
                         key={t.id}
-                        className={`p-4 rounded-2xl border ${
-                          t.status === 'completed' 
-                            ? 'bg-green-50 border-green-100 grayscale-[0.5]' 
+                        className={`p-4 rounded-2xl border ${t.status === 'completed'
+                            ? 'bg-green-50 border-green-100 grayscale-[0.5]'
                             : 'bg-white border-gray-100 hover:border-indigo-100'
-                        } transition-all group`}
+                          } transition-all group`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start gap-3">
-                            <div className={`mt-1 p-2 rounded-xl ${
-                              t.status === 'completed' ? 'bg-green-200 text-green-700' : 'bg-gray-100 text-gray-500'
-                            }`}>
+                            <div className={`mt-1 p-2 rounded-xl ${t.status === 'completed' ? 'bg-green-200 text-green-700' : 'bg-gray-100 text-gray-500'
+                              }`}>
                               {t.event_type === 'meeting' ? <Clock size={16} /> : <Tag size={16} />}
                             </div>
                             <div>
@@ -234,7 +237,7 @@ export default function CalendarPage() {
                             </div>
                           </div>
                           {t.status === 'pending' && (
-                            <button 
+                            <button
                               onClick={() => completeTask(t.id)}
                               className="text-gray-300 hover:text-green-500 transition-colors"
                             >
@@ -287,8 +290,8 @@ export default function CalendarPage() {
                 <form onSubmit={addTask} className="space-y-6">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Event Title</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="e.g. Project Review"
@@ -298,7 +301,7 @@ export default function CalendarPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
-                    <textarea 
+                    <textarea
                       value={desc}
                       onChange={(e) => setDesc(e.target.value)}
                       placeholder="Details about this task..."
@@ -313,11 +316,10 @@ export default function CalendarPage() {
                           key={cat}
                           type="button"
                           onClick={() => setType(cat)}
-                          className={`p-3 rounded-xl border text-sm font-bold capitalize transition-all ${
-                            type === cat 
-                              ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' 
+                          className={`p-3 rounded-xl border text-sm font-bold capitalize transition-all ${type === cat
+                              ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
                               : 'bg-white border-gray-200 text-gray-600 hover:border-indigo-200'
-                          }`}
+                            }`}
                         >
                           {cat}
                         </button>
@@ -326,18 +328,26 @@ export default function CalendarPage() {
                   </div>
 
                   <div className="flex gap-4 pt-4">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => setShowAddForm(false)}
                       className="flex-1 p-4 rounded-2xl font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all"
                     >
                       Cancel
                     </button>
-                    <button 
-                      type="submit" 
-                      className="flex-[2] p-4 rounded-2xl font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all"
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="flex-[2] p-4 rounded-2xl font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700 disabled:opacity-75 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                     >
-                      Create Entry
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 size={20} className="animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        'Create Entry'
+                      )}
                     </button>
                   </div>
                 </form>

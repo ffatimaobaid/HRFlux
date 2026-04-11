@@ -6,10 +6,10 @@ import Sidebar from '@/components/Sidebar';
 import SmartNotification, { ProactiveNotification } from '@/components/SmartNotification';
 import { chatApi, hrApi } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
-import { 
-  Send, 
-  Bot, 
-  User, 
+import {
+  Send,
+  Bot,
+  User,
   Loader2,
   Calendar,
   ClipboardList,
@@ -140,7 +140,7 @@ export default function Dashboard() {
     if (user) {
       loadHistory();
       loadNotifications();
-      
+
       // Poll for new notifications every 30 seconds
       const interval = setInterval(loadNotifications, 30000);
       return () => clearInterval(interval);
@@ -153,10 +153,30 @@ export default function Dashboard() {
     }
   }, [messages]);
 
+  const getDismissedIds = (): Set<number> => {
+    try {
+      const raw = localStorage.getItem('hrflux_dismissed_notifs');
+      return new Set(raw ? JSON.parse(raw) : []);
+    } catch {
+      return new Set();
+    }
+  };
+
+  const addDismissedId = (id: number) => {
+    const ids = getDismissedIds();
+    ids.add(id);
+    localStorage.setItem('hrflux_dismissed_notifs', JSON.stringify([...ids]));
+  };
+
   const loadNotifications = async () => {
     try {
       const res = await hrApi.getProactiveNotifications();
-      setNotifications(res.data);
+      const dismissed = getDismissedIds();
+      // Filter out any notifications the user already dismissed this session
+      const visible = (res.data as ProactiveNotification[]).filter(
+        (n) => !n.id || !dismissed.has(n.id)
+      );
+      setNotifications(visible);
     } catch (err) {
       console.error('Failed to load notifications', err);
     }
@@ -165,11 +185,8 @@ export default function Dashboard() {
   const handleCloseNotification = async (index: number) => {
     const notif = notifications[index];
     if (notif?.id) {
-      try {
-        await hrApi.updateNotification(notif.id, 'dismissed');
-      } catch (err) {
-        console.error('Failed to dismiss notification', err);
-      }
+      // Track dismissal permanently on this browser
+      addDismissedId(notif.id);
     }
     setNotifications(prev => prev.filter((_, i) => i !== index));
   };
@@ -262,75 +279,83 @@ export default function Dashboard() {
         <header className="h-16 border-b border-gray-100 bg-white flex items-center justify-between px-8">
           <h1 className="text-xl font-bold text-gray-800">🤖 Chat Assistant</h1>
           {/* Proactive Notifications Header Icon */}
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-gray-500">Model: Gemini 1.5 Flash</span>
-          
-          {/* Notification Bell */}
-          <div className="relative" ref={notifRef}>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsNotifOpen(!isNotifOpen)}
-              className="p-2.5 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all relative"
-            >
-              <Bell size={20} />
-              {notifications.length > 0 && (
-                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
-              )}
-            </motion.button>
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-gray-500">Model: Gemini 1.5 Flash</span>
 
-            <AnimatePresence>
-              {isNotifOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 mt-3 w-80 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-[100]"
-                >
-                  <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                    <h4 className="font-black text-gray-800 tracking-tight">Notifications</h4>
-                    <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full uppercase">
-                      {notifications.length} New
-                    </span>
-                  </div>
-                  <div className="max-h-96 overflow-y-auto">
-                    {notifications.length > 0 ? (
-                      <SmartNotification 
-                        isDropdown 
-                        notifications={notifications}
-                        onAction={handleNotifAction}
-                        onClose={handleCloseNotification}
-                      />
-                    ) : (
-                      <div className="p-8 text-center">
-                        <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Bell size={20} className="text-gray-300" />
+            {/* Notification Bell */}
+            <div className="relative" ref={notifRef}>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsNotifOpen(!isNotifOpen)}
+                className="p-2.5 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all relative"
+              >
+                <Bell size={20} />
+                {notifications.length > 0 && (
+                  <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
+                )}
+              </motion.button>
+
+              <AnimatePresence>
+                {isNotifOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-3 w-80 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-[100]"
+                  >
+                    <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+                      <h4 className="font-black text-gray-800 tracking-tight">Notifications</h4>
+                      <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full uppercase">
+                        {notifications.length} New
+                      </span>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {notifications.length > 0 ? (
+                        <SmartNotification
+                          isDropdown
+                          notifications={notifications}
+                          onAction={handleNotifAction}
+                          onClose={handleCloseNotification}
+                        />
+                      ) : (
+                        <div className="p-8 text-center">
+                          <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <Bell size={20} className="text-gray-300" />
+                          </div>
+                          <p className="text-sm font-bold text-gray-400">All caught up!</p>
                         </div>
-                        <p className="text-sm font-bold text-gray-400">All caught up!</p>
+                      )}
+                    </div>
+                    {notifications.length > 0 && (
+                      <div className="p-3 bg-gray-50 border-t border-gray-100 text-center">
+                        <button className="text-[10px] font-black text-indigo-600 hover:text-indigo-700 uppercase tracking-widest">
+                          Clear All
+                        </button>
                       </div>
                     )}
-                  </div>
-                  {notifications.length > 0 && (
-                    <div className="p-3 bg-gray-50 border-t border-gray-100 text-center">
-                      <button className="text-[10px] font-black text-indigo-600 hover:text-indigo-700 uppercase tracking-widest">
-                        Clear All
-                      </button>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-          <div className="w-10 h-10 rounded-full border-2 border-indigo-100 p-0.5">
+            <div className="w-10 h-10 rounded-full border-2 border-indigo-100 p-0.5">
               <div className="w-full h-full bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 font-bold">
                 {user?.username?.charAt(0).toUpperCase()}
               </div>
             </div>
           </div>
         </header>
-        
-        {/* Removed Static Proactive Notifications */}
+
+        {/* Inline Proactive Notifications */}
+        <div className="px-8 pt-8">
+          <SmartNotification
+            notifications={notifications}
+            onAction={handleNotifAction}
+            onClose={handleCloseNotification}
+            isDropdown={false}
+          />
+        </div>
 
         {/* Quick Actions */}
         <div className="px-8 pt-6">
@@ -377,11 +402,10 @@ export default function Dashboard() {
               >
                 <div className={`flex gap-3 max-w-[80%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                   <div
-                    className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ${
-                      msg.role === 'user'
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-white border border-gray-200 text-indigo-600'
-                    }`}
+                    className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ${msg.role === 'user'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-white border border-gray-200 text-indigo-600'
+                      }`}
                   >
                     {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
                   </div>
@@ -389,11 +413,10 @@ export default function Dashboard() {
                   <div className="space-y-2">
                     {/* Message bubble */}
                     <div
-                      className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${
-                        msg.role === 'user'
-                          ? 'bg-indigo-600 text-white rounded-tr-none'
-                          : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-                      }`}
+                      className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${msg.role === 'user'
+                        ? 'bg-indigo-600 text-white rounded-tr-none'
+                        : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
+                        }`}
                     >
                       {msg.content}
                     </div>

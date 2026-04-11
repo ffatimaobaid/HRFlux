@@ -53,13 +53,13 @@ def get_next_available_key():
 def is_key_available(api_key):
     """Check if a key is available (not rate limited)"""
     try:
-        # Make a simple test call to check if key is working
-        from chat_groq_with_retry import create_chat_groq_with_retry
+        from langchain_groq import ChatGroq
         
-        llm = create_chat_groq_with_retry(
+        llm = ChatGroq(
             model_name="llama-3.3-70b-versatile",
             temperature=0.2,
-            api_key=api_key
+            groq_api_key=api_key,
+            max_retries=0
         )
         
         # Simple test message
@@ -77,9 +77,9 @@ def is_key_available(api_key):
             print(f"🚫 Key rate limited: {api_key[:20]}...")
             return False
         else:
-            # Other error, but key might still work
-            print(f"⚠️ Key test failed (not rate limit): {api_key[:20]}...")
-            return True
+            # Other error, key is completely broken/invalid
+            print(f"⚠️ Key test failed (invalid/broken key): {api_key[:20]}...")
+            return False
 
 def smart_rotate_on_rate_limit():
     """Smart rotation that tries all keys before failing"""
@@ -105,29 +105,37 @@ def smart_rotate_on_rate_limit():
     print("❌ All API keys are rate limited")
     return None
 
-def set_working_key_first():
-    """Set working key to first position for rotation priority"""
+def test_and_set_working_key():
+    """Dynamically test keys on startup and set the first working one."""
     global current_key_index, GROQ_API_KEYS
     
-    # Find the working key (The one we know is active)
-    working_key = "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"
+    print("🔄 Initializing system and verifying API keys...")
     
-    if working_key and working_key != GROQ_API_KEYS[0]:
-        # Remove working key from its current position
-        GROQ_API_KEYS.remove(working_key)
-        # Insert at first position
-        GROQ_API_KEYS.insert(0, working_key)
-        # Reset index to 0 since working key is now first
-        current_key_index = 0
-        print(f"✅ Working key moved to first position: {working_key[:20]}...")
-    else:
-        print("ℹ️ Working key already in first position or not found")
+    # Check the first key first without rearranging if it works
+    if is_key_available(GROQ_API_KEYS[0]):
+        print(f"✅ Primary API key is active: {GROQ_API_KEYS[0][:20]}...")
+        return
 
-# Prioritize working key when module loads
+    # If the first fails, dynamically find one that works
+    working_key = None
+    for i in range(1, len(GROQ_API_KEYS)):
+        key = GROQ_API_KEYS[i]
+        if is_key_available(key):
+            working_key = key
+            break
+            
+    if working_key:
+        GROQ_API_KEYS.remove(working_key)
+        GROQ_API_KEYS.insert(0, working_key)
+        current_key_index = 0
+        print(f"✅ Found working key & shifted to priority: {working_key[:20]}...")
+    else:
+        print("❌ WARNING: No working API keys found during startup check!")
+
 try:
-    set_working_key_first()
+    test_and_set_working_key()
 except Exception as e:
-    print(f"⚠️ Could not prioritize working key: {e}")
+    print(f"⚠️ Could not verify keys on startup: {e}")
 
 # Legacy compatibility
 GROQ_API_KEY = get_current_api_key()

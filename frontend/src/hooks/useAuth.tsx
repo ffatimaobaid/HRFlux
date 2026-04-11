@@ -19,7 +19,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  logout: () => {},
+  logout: () => { },
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -62,6 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.removeItem('hrflux_token');
     localStorage.removeItem('hrflux_user');
     localStorage.removeItem('hrflux_employee_id');
+    localStorage.removeItem('hrflux_dismissed_notifs');
     setUser(null);
     router.push('/login');
   };

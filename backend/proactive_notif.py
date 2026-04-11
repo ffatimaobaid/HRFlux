@@ -19,21 +19,11 @@ class ProactiveNotifEngine:
         notifications = []
         today_str = date.today().isoformat()
         
-        # 1. Check Attendance
-        c.execute("SELECT check_in_time FROM attendance WHERE employee_id = ? AND date = ?", (employee_id, today_str))
-        attendance = c.fetchone()
-        if not attendance or not attendance['check_in_time']:
-            notifications.append({
-                "type": "warning",
-                "title": "Clock-in Reminder",
-                "message": "You haven't checked in for today yet. Stay compliant with the attendance policy!",
-                "action_label": "Check In Now",
-                "action_id": "check_in"
-            })
+        # 1. Check Attendance (Removed as requested)
             
         # 2. Check Tasks / Deadlines
         c.execute("""
-            SELECT title, deadline FROM employee_tasks 
+            SELECT id, title, deadline FROM employee_tasks 
             WHERE employee_id = ? AND status = 'pending' 
             AND deadline <= ?
         """, (employee_id, today_str))
@@ -41,6 +31,7 @@ class ProactiveNotifEngine:
         for t in tasks:
             urgency = "TODAY" if t['deadline'] == today_str else "SOON"
             notifications.append({
+                "id": t['id'],  # Unique task ID
                 "type": "critical" if urgency == "TODAY" else "info",
                 "title": f"Deadline Alert: {urgency}",
                 "message": f"Your task '{t['title']}' is due {t['deadline'].split('-')[-1]}. Don't miss it!",
@@ -61,6 +52,7 @@ class ProactiveNotifEngine:
             
             if low_balances:
                 notifications.append({
+                    "id": 1001,  # Fixed ID for leave balance
                     "type": "info",
                     "title": "Leave Balance Notice",
                     "message": f"Your {', '.join(low_balances)} leave balance is running low. Plan your time accordingly.",
@@ -72,6 +64,7 @@ class ProactiveNotifEngine:
         # Randomly suggest a policy if no urgent notifications
         if not notifications:
             notifications.append({
+                "id": 1002,  # Fixed ID for daily tip
                 "type": "success",
                 "title": "Daily Tip",
                 "message": "You are all caught up! Remember to take 5-minute breaks every hour for better focus.",

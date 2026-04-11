@@ -54,7 +54,7 @@ def get_similar_questions(user_query, faq_questions=FAQ_QUESTIONS, top_n=3):
 
 def query_gemini_with_retry(context_chunks, question, model_name="gemini-2.0-flash", chat_history=None, hr_knowledge=None, max_retries=5):
     """
-    Query Gemini/Google LLM with retry logic and error handling.
+    Query LLM with Groq prioritization (key rotation built-in) and fallback to Gemini.
     """
     # System prompt remains same
     system_prompt = f"""
@@ -63,30 +63,45 @@ def query_gemini_with_retry(context_chunks, question, model_name="gemini-2.0-fla
     HR Knowledge: {hr_knowledge}
     """
     
+    messages = [
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=question)
+    ]
+
+    # --- ATTEMPT 1: GROQ (WITH KEY ROTATION) ---
+    try:
+        from chat_groq_with_retry import create_chat_groq_with_retry
+        print("🤖 Attempting query via Groq (Primary)...")
+        # Instantiate Groq with its built-in key rotation capability
+        llm_groq = create_chat_groq_with_retry(
+            model_name="llama-3.3-70b-versatile",
+            temperature=0.3,
+            max_tokens=500
+        )
+        response = llm_groq.invoke(messages)
+        if response and hasattr(response, 'content'):
+            return response.content.strip(), True
+    except Exception as e:
+        print(f"⚠️ Groq exhaustive rotation failed: {e}. Falling back to Gemini...")
+
+    # --- ATTEMPT 2: GEMINI (FALLBACK) ---
+    print(f"🤖 Falling back to Gemini ({model_name})...")
     for attempt in range(max_retries):
         try:
-            llm = ChatGoogleGenerativeAI(
+            llm_gemini = ChatGoogleGenerativeAI(
                 model=model_name,
                 temperature=0.3,
-                google_api_key=os.getenv("GOOGLE_API_KEY") or get_current_api_key(),
+                google_api_key=os.getenv("GOOGLE_API_KEY"),
                 max_tokens=500
             )
-            
-            messages = [
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=question)
-            ]
-            
-            response = llm.invoke(messages)
+            response = llm_gemini.invoke(messages)
             if response and hasattr(response, 'content'):
                 return response.content.strip(), True
             else:
                 return "Gemini AI returned an empty response. Let's try once more.", False
-
         except Exception as e:
             error_str = str(e)
             print(f"Gemini Attempt {attempt + 1}/{max_retries} failed: {error_str}")
-            
             if attempt < max_retries - 1:
                 time.sleep(2)
                 continue

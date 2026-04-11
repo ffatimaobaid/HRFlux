@@ -123,7 +123,7 @@ def tool_submit_leave_request(username: str, leave_type: str, start_date: str, e
     """
     Submit a formal leave application to the HR system.
     Requires: username, leave_type ('casual', 'sick', or 'annual'), start_date (YYYY-MM-DD), end_date (YYYY-MM-DD), and a reason.
-    Only call this if the user has EXPLICITLY confirmed they want to apply for these dates.
+    Call this after checking balance and calendar. If there are no conflicts, submit directly. If there are conflicts, submit only after the user confirms they want to proceed.
     """
     try:
         emp = get_employee(employee_id=username) or get_employee(username=username)
