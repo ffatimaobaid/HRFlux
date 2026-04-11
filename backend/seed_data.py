@@ -339,12 +339,7 @@ def main():
     print("  - IT Manager: mike.it / password123")
     print("  - Developer: tom.dev / password123")
     print("  - Sales: robert.sales / password123")
-    print("\n🚀 You can now:")
-    print("  1. Run the chatbot: streamlit run chat_app.py")
-    print("  2. Start the API: python backend_api.py")
-    print("  3. Test leave workflows with sample employees")
     print("=" * 60)
-
 
 if __name__ == "__main__":
     main()

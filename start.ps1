@@ -47,8 +47,18 @@ else {
     Write-Host "      All requirements already satisfied." -ForegroundColor Green
 }
 
-# Step 3: Launch Backend and Frontend in separate terminals
-Write-Host "[3/3] Starting Backend and Frontend..." -ForegroundColor Yellow
+# Step 3: Initialize Database
+Write-Host "[3/4] Initializing Database and Seeding Data..." -ForegroundColor Yellow
+& "$PythonExe" backend\seed_data.py
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: Database initialization failed." -ForegroundColor Red
+    exit 1
+}
+Write-Host "      Database initialized successfully." -ForegroundColor Green
+Write-Host ""
+
+# Step 4: Launch Backend and Frontend in separate terminals
+Write-Host "[4/4] Starting Backend and Frontend..." -ForegroundColor Yellow
 Write-Host ""
 
 # Launch Backend in a new PowerShell terminal
