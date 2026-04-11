@@ -14,7 +14,8 @@ import {
   AlertCircle,
   Zap,
   Globe,
-  Bell
+  Bell,
+  Loader2
 } from 'lucide-react';
 
 export default function SettingsPage() {
