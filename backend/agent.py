@@ -192,8 +192,14 @@ def run_agent(user, question, model_name="gemini-2.0-flash", context_chunks=None
                         continue
                 raise e
         
-        # Extract the final answer
-        final_answer = result["messages"][-1].content
+        # Extract the final answer and ensure it's a string
+        val = result["messages"][-1].content
+        if isinstance(val, list):
+            # Handle cases where Gemini returns a list of parts
+            text_parts = [part.get("text", "") if isinstance(part, dict) else str(part) for part in val]
+            final_answer = "".join(text_parts).strip()
+        else:
+            final_answer = str(val).strip()
         
         # Check if the response contains JSON (document generation)
         suggestions = []
@@ -250,7 +256,7 @@ def run_agent(user, question, model_name="gemini-2.0-flash", context_chunks=None
             # Not a JSON response, handle normally
             pass
         
-        # Log it
+        # Log it - Global save_log in db.py handles type safety
         save_log(user, question, final_answer)
         
         # --- SMART SUGGESTIONS ---

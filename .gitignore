@@ -24,3 +24,7 @@ Thumbs.db
 # Large temporary files (can be regenerated)
 *.tmp
 *.temp
+
+# Database files (preserve local data)
+*.db
+queries.db

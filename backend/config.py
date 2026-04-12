@@ -2,15 +2,8 @@ import os
 
 # Multiple Groq API keys for rotation
 GROQ_API_KEYS = [
-    "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",# shayane947
-    "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",#famma new
-    "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", #i220487
-    "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", #shayane - WORKING KEY
-    "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",
-    "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",#famma
-    "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",#hadiamazhar662 new
-    "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",#shayane new
-    "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", # EXHAUSTED
+    "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", #api
+    "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"
 ]
 
 # Current key index for rotation
@@ -109,7 +102,8 @@ def test_and_set_working_key():
     """Dynamically test keys on startup and set the first working one."""
     global current_key_index, GROQ_API_KEYS
     
-    print("🔄 Initializing system and verifying API keys...")
+    # Find the working key (The one we know is active)
+    working_key = "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"
     
     # Check the first key first without rearranging if it works
     if is_key_available(GROQ_API_KEYS[0]):
@@ -132,16 +126,65 @@ def test_and_set_working_key():
     else:
         print("❌ WARNING: No working API keys found during startup check!")
 
-try:
-    test_and_set_working_key()
-except Exception as e:
-    print(f"⚠️ Could not verify keys on startup: {e}")
+# --- GEMINI KEY ROTATION (MIRRORED LOGIC) ---
+GEMINI_API_KEYS = [
+    "AIzaSyDOEdBEO1YBrEXnxnHzcpaKzFoE163cW0M",
+    "AIzaSyDJgn14PJaB1zu0B2kedhhs8fX6cAlfHLc", # active
+]
+gemini_current_key_index = 0
+
+def get_current_gemini_key():
+    """Get the current Gemini API key"""
+    return GEMINI_API_KEYS[gemini_current_key_index]
+
+def rotate_gemini_key():
+    """Rotate to the next Gemini API key"""
+    global gemini_current_key_index
+    gemini_current_key_index = (gemini_current_key_index + 1) % len(GEMINI_API_KEYS)
+    print(f"🔄 Rotated to Gemini Key: {get_current_gemini_key()[:8]}...")
+    return get_current_gemini_key()
+
+def is_gemini_key_available(api_key):
+    """Health check for Gemini key"""
+    try:
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
+        llm.invoke("test")
+        return True
+    except Exception as e:
+        msg = str(e).lower()
+        if "rate" in msg or "quota" in msg:
+            print(f"🚫 Gemini Key rate limited: {api_key[:8]}...")
+            return False
+        return True # Other error, but key might be ok
+
+def set_working_gemini_key_first():
+    """Prioritize the primary working Gemini key"""
+    global gemini_current_key_index, GEMINI_API_KEYS
+    working_key = "AIzaSyBiVFAKx9gM_wrYNdgDRzsMwGWNyykX9zE"
+    
+    if working_key in GEMINI_API_KEYS:
+        if working_key != GEMINI_API_KEYS[0]:
+            GEMINI_API_KEYS.remove(working_key)
+            GEMINI_API_KEYS.insert(0, working_key)
+            gemini_current_key_index = 0
+            print(f"✅ Working Gemini key moved to first position: {working_key[:8]}...")
+    else:
+        print("ℹ️ Working Gemini key already in first position or not found")
+
+# Optional: Manual trigger for prioritization if needed
+def prioritize_all_keys():
+    try:
+        test_and_set_working_key()
+        set_working_gemini_key_first()
+    except Exception as e:
+        print(f"⚠️ Could not prioritize working keys: {e}")
 
 # Legacy compatibility
 GROQ_API_KEY = get_current_api_key()
 # Gemini API Key (Fallback)
 GEMINI_MODEL = "gemini-2.5-flash"
-GEMINI_API_KEY = "AIzaSyBiVFAKx9gM_wrYNdgDRzsMwGWNyykX9zE"
+GEMINI_API_KEY = get_current_gemini_key()
 
 # RAG debug / traceability: show top source files under answers when True
 SHOW_SOURCES = True

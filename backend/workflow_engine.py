@@ -54,8 +54,15 @@ class LeaveWorkflowEngine:
                 'balance': 0
             }
         
-        # Validate reason length and content
-        validation = InputValidator.validate_leave_request(employee_id, leave_type, start_date, end_date, content_filter['sanitized_text'])
+        # Validate reason length and content using dictionary format
+        leave_request_data = {
+            'employee_id': employee_id,
+            'leave_type': leave_type,
+            'start_date': start_date,
+            'end_date': end_date,
+            'reason': content_filter['sanitized_text']
+        }
+        validation = InputValidator.validate_leave_request(leave_request_data)
         
         if not validation['valid']:
             SecurityLogger.log_security_event('leave_validation_failed', {
@@ -82,7 +89,7 @@ class LeaveWorkflowEngine:
         if current_balance >= days_required:
             return {
                 'valid': True,
-                'message': f'Leave request valid. {current_balance - days_required} days remaining.',
+                'message': f'Leave request valid. {current_balance - days_required} days will remain after approval.',
                 'days_required': days_required,
                 'balance': current_balance
             }
@@ -131,7 +138,7 @@ class LeaveWorkflowEngine:
         """
         # Validate leave balance
         validation = LeaveWorkflowEngine.validate_leave_request(
-            employee_id, leave_type, start_date, end_date
+            employee_id, leave_type, start_date, end_date, reason
         )
         
         if not validation['valid']:
@@ -269,7 +276,7 @@ class LeaveWorkflowEngine:
             NotificationManager.create_notification(
                 user_id=employee_id,
                 n_type="success",
-                title="Leave Approved! 🎉",
+                title="Leave Approved",
                 message=f"Your {leave_type} leave from {start_date} to {end_date} has been approved.",
                 priority=1
             )

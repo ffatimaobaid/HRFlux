@@ -35,14 +35,14 @@ export default function AdminSidebar() {
     <aside className="w-64 bg-gray-900 text-white flex flex-col h-screen sticky top-0">
       <div className="p-6">
         <div className="flex items-center gap-3 mb-10">
-          <div className="bg-indigo-500 p-2 rounded-lg text-white">
+          <div className="bg-[#f4effc]0 p-2 rounded-lg text-white">
             <ShieldCheck size={24} />
           </div>
           <span className="text-xl font-bold tracking-tight">HRFLUX <span className="text-indigo-400">ADMIN</span></span>
         </div>
 
         <div className="mb-10 p-4 bg-gray-800/50 rounded-2xl flex items-center gap-3 border border-gray-700/50">
-          <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
+          <div className="w-10 h-10 bg-[#f4effc]0 rounded-full flex items-center justify-center text-white font-bold">
             A
           </div>
           <div className="overflow-hidden">
@@ -60,7 +60,7 @@ export default function AdminSidebar() {
                   whileHover={{ x: 4 }}
                   className={`flex items-center justify-between p-3.5 rounded-xl transition-all ${
                     isActive 
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20' 
+                      ? 'bg-[#7b2ff7] text-white shadow-lg shadow-[#3E1287]/20' 
                       : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                   }`}
                 >

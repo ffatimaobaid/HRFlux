@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { authApi } from '@/lib/api';
 import { LogIn, UserPlus, Bot, Users } from 'lucide-react';
+import { Input, Button } from 'antd';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,7 +47,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#e3e6ff] items-center justify-center p-4">
+    <div className="flex min-h-screen bg-[#faf5ff] items-center justify-center p-4">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -72,46 +73,46 @@ export default function LoginPage() {
 
           <form onSubmit={handleAuth} className="space-y-4">
             {isSignup && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                <input
-                  type="text"
+              <div className="mb-4">
+                <label className="block text-[13px] font-semibold text-gray-700 mb-1.5 px-0.5">Username</label>
+                <Input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full p-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  className="w-full text-base"
+                  size="large"
                   placeholder="Choose a username"
                   required
                 />
               </div>
             )}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="mb-4">
+              <label className="block text-[13px] font-semibold text-gray-700 mb-1.5 px-0.5">
                 {isSignup ? 'Email' : 'Username / Email'}
               </label>
-              <input
-                type="text"
+              <Input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                className="w-full text-base"
+                size="large"
                 placeholder={isSignup ? 'Enter your email' : 'Enter your email or username'}
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input
-                type="password"
+            <div className="mb-2">
+              <label className="block text-[13px] font-semibold text-gray-700 mb-1.5 px-0.5">Password</label>
+              <Input.Password
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                className="w-full text-base"
+                size="large"
                 placeholder="Enter your password"
                 required
               />
             </div>
 
             {!isSignup && (
-              <div className="text-right">
-                <button type="button" className="text-sm text-indigo-600 hover:underline">
+              <div className="text-right mb-4">
+                <button type="button" className="text-[13px] text-[#7b2ff7] font-medium hover:underline">
                   Forgot your password?
                 </button>
               </div>
@@ -123,27 +124,23 @@ export default function LoginPage() {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold hover:bg-indigo-700 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              loading={loading}
+              className="w-full mt-4 font-bold h-12 text-base transition-opacity hover:opacity-90 active:scale-[0.98]"
+              icon={isSignup ? <UserPlus size={18} /> : <LogIn size={18} />}
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
-                  {isSignup ? <UserPlus size={20} /> : <LogIn size={20} />}
-                  {isSignup ? 'Create Account' : 'Login'}
-                </>
-              )}
-            </button>
+              {isSignup ? 'Create Account' : 'Login'}
+            </Button>
           </form>
 
-          <div className="mt-8 text-center">
+          <div className="mt-8 text-center px-4">
             <button
               type="button"
               onClick={() => setIsSignup(!isSignup)}
-              className="text-gray-500 hover:text-indigo-600 transition-colors"
+              className="text-gray-500 text-sm font-medium hover:text-[#7b2ff7] transition-colors"
             >
               {isSignup ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
             </button>
@@ -151,7 +148,7 @@ export default function LoginPage() {
         </div>
 
         {/* Right Side: Visual */}
-        <div className="hidden lg:flex flex-1 bg-indigo-600 p-12 items-center justify-center">
+        <div className="hidden lg:flex flex-1 bg-[#7b2ff7] p-12 items-center justify-center">
           <div className="max-w-xs text-white text-center">
             <motion.div 
               animate={{ y: [0, -10, 0] }}

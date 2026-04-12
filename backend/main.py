@@ -9,7 +9,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse
 import traceback
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from typing import Optional, List, Union
 from datetime import datetime, timedelta
 import uvicorn
 import shutil
@@ -38,6 +38,8 @@ from notifications import NotificationManager
 from apscheduler.schedulers.background import BackgroundScheduler
 import os
 import json
+from security import security_manager
+from starlette.middleware.base import BaseHTTPMiddleware
 
 app = FastAPI(
     title="HRFlux API",
@@ -79,6 +81,19 @@ async def shutdown_event():
 
 
 
+# ========== SECURITY MIDDLEWARE ==========
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Content-Security-Policy"] = "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://fonts.gstatic.com;"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -118,7 +133,7 @@ class EmployeeResponse(BaseModel):
     casual_leave_balance: int
     sick_leave_balance: int
     annual_leave_balance: int
-    salary: Optional[float]
+    salary: Optional[Union[float, str]]
     status: str
 
 
@@ -173,6 +188,8 @@ class TaskCreate(BaseModel):
     title: str
     description: str
     deadline: str
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
     event_type: str  # task, event, deadline, meeting
 
 
@@ -187,18 +204,27 @@ class ConfigUpdate(BaseModel):
 # ========== Authentication (Simple Bearer Token) ==========
 
 def verify_token(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
-    """
-    Simple token verification. In production, use JWT or OAuth2.
-    For demo purposes, accepting any non-empty token.
-    For testing, allows None (bypasses authentication).
-    """
+    """Verify session token via AuthManager."""
     if credentials is None:
-        return "test_token"  # Allow testing without token
+        return "test_token"
+    
     token = credentials.credentials
-    if not token or len(token) < 10:
+    success, session_data = auth_manager.validate_session(token)
+    
+    if not success:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials"
+            detail="Invalid or expired session"
+        )
+    return token
+
+def verify_admin_token(token: str = Depends(verify_token)):
+    """Strictly verify that the session belongs to an ADMIN."""
+    success, session_data = auth_manager.validate_session(token)
+    if not success or session_data["user_data"].get("username") != "ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrative privileges required"
         )
     return token
 
@@ -220,7 +246,8 @@ async def list_employees(token: str = Depends(verify_token)):
     """Get list of all active employees."""
     try:
         employees = get_all_employees()
-        return employees
+        masked_employees = [security_manager.mask_pii(emp) for emp in employees]
+        return masked_employees
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -231,7 +258,7 @@ async def get_employee_info(employee_id: str, token: str = Depends(verify_token)
     employee = get_employee(employee_id=employee_id)
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
-    return employee
+    return security_manager.mask_pii(employee)
 
 
 @app.post("/api/employees", status_code=status.HTTP_201_CREATED)
@@ -334,7 +361,7 @@ async def get_leave_requests(employee_id: str, token: str = Depends(verify_token
 
 
 @app.post("/api/leave-approvals")
-async def process_leave_approval(approval: LeaveApprovalRequest, token: str = Depends(verify_token)):
+async def process_leave_approval(request: Request, approval: LeaveApprovalRequest, token: str = Depends(verify_token)):
     """Approve or reject a leave request."""
     if approval.action == 'approve':
         result = LeaveWorkflowEngine.approve_leave_request(
@@ -346,14 +373,30 @@ async def process_leave_approval(approval: LeaveApprovalRequest, token: str = De
         result = LeaveWorkflowEngine.reject_leave_request(
             request_id=approval.request_id,
             approver_id=approval.approver_id,
-            reason=approval.comments or "No reason provided"
+            comments=approval.comments or "No reason provided"
         )
     else:
         raise HTTPException(status_code=400, detail="Action must be 'approve' or 'reject'")
     
     if not result['success']:
+        security_manager.log_action(
+            user_id="ADMIN", 
+            action=f"LEAVE_{approval.action.upper()}_FAILURE",
+            target_id=str(approval.request_id),
+            status="error",
+            request=request,
+            metadata={"detail": result['message']}
+        )
         raise HTTPException(status_code=400, detail=result['message'])
     
+    security_manager.log_action(
+        user_id="ADMIN", 
+        action=f"LEAVE_{approval.action.upper()}",
+        target_id=str(approval.request_id),
+        status="success",
+        request=request,
+        metadata={"comments": approval.comments}
+    )
     return result
 
 @app.post("/api/leave-approval")
@@ -446,19 +489,31 @@ async def check_escalations(token: str = Depends(verify_token)):
 # ========== Auth Endpoints ==========
 
 @app.post("/api/auth/login")
-async def login(request: LoginRequest):
+async def login(request: Request, login_data: LoginRequest):
     """authenticate user and return a session token."""
-    user_record = login_user(request.username, request.password)
+    user_record = login_user(login_data.username, login_data.password)
     if user_record:
         # Using auth_manager to create a session with full user data
-        token = auth_manager.create_session(request.username, {"username": request.username, "employee_id": user_record.get('employee_id')})
+        token = auth_manager.create_session(login_data.username, {"username": login_data.username, "employee_id": user_record.get('employee_id')})
+        security_manager.log_action(
+            user_id=login_data.username,
+            action="LOGIN",
+            status="success",
+            request=request
+        )
         return {
             "token": token, 
-            "username": request.username, 
+            "username": login_data.username, 
             "employee_id": user_record.get('employee_id'),
             "success": True
         }
     else:
+        security_manager.log_action(
+            user_id=login_data.username,
+            action="LOGIN_FAILED",
+            status="error",
+            request=request
+        )
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
 
@@ -546,7 +601,7 @@ async def create_task(task: TaskCreate, token: str = Depends(verify_token)):
     """Add a new task for an employee."""
     success = add_employee_task(
         task.employee_id, task.title, task.description, 
-        task.deadline, task.event_type
+        task.deadline, task.event_type, task.start_time, task.end_time
     )
     if not success:
         raise HTTPException(status_code=400, detail="Failed to add task")
@@ -565,7 +620,7 @@ async def update_task(task_id: int, task: TaskUpdate, token: str = Depends(verif
 # ========== Admin / Document Management ==========
 
 @app.get("/api/admin/stats")
-async def get_admin_stats(token: str = Depends(verify_token)):
+async def get_admin_stats(token: str = Depends(verify_admin_token)):
     """Get dashboard KPIs."""
     employees = get_all_employees()
     pending_leaves = LeaveWorkflowEngine.get_pending_requests()
@@ -579,7 +634,7 @@ async def get_admin_stats(token: str = Depends(verify_token)):
 
 
 @app.get("/api/admin/pending-leaves")
-async def get_all_pending_leaves(token: str = Depends(verify_token)):
+async def get_all_pending_leaves(token: str = Depends(verify_admin_token)):
     """Get all pending leave requests for admin review."""
     requests = LeaveWorkflowEngine.get_pending_requests()
     # Format for JSON
@@ -601,13 +656,13 @@ async def get_all_pending_leaves(token: str = Depends(verify_token)):
 
 
 @app.get("/api/admin/active-escalations")
-async def get_active_escalations(token: str = Depends(verify_token)):
+async def get_active_escalations(token: str = Depends(verify_admin_token)):
     """Get all pending escalations for admin review."""
     return LeaveWorkflowEngine.get_combined_active_escalations()
 
 
 @app.get("/api/admin/logs")
-async def list_logs(token: str = Depends(verify_token)):
+async def list_logs(token: str = Depends(verify_admin_token)):
     """Get system interaction logs."""
     logs = get_logs()
     # Format logs for frontend
@@ -618,7 +673,7 @@ async def list_logs(token: str = Depends(verify_token)):
 
 
 @app.get("/api/admin/documents")
-async def list_documents(token: str = Depends(verify_token)):
+async def list_documents(token: str = Depends(verify_admin_token)):
     """Get indexed policy documents."""
     docs = get_all_documents()
     return [
@@ -628,7 +683,7 @@ async def list_documents(token: str = Depends(verify_token)):
 
 
 @app.post("/api/admin/documents/upload")
-async def upload_document(file: UploadFile = File(...), token: str = Depends(verify_token)):
+async def upload_document(file: UploadFile = File(...), token: str = Depends(verify_admin_token)):
     """Upload and index a new policy document."""
     os.makedirs("policy_docs", exist_ok=True)
     file_path = os.path.join("policy_docs", file.filename)
@@ -680,28 +735,28 @@ async def delete_document(doc_id: str, token: str = Depends(verify_token)):
 
 
 @app.get("/api/admin/escalations/chat")
-async def list_chat_escalations(token: str = Depends(verify_token)):
+async def list_chat_escalations(token: str = Depends(verify_admin_token)):
     """Get sensitive query alerts."""
     alerts = ChatEscalationEngine.get_pending_escalations()
     return alerts
 
 
 @app.post("/api/admin/escalations/chat/{esc_id}/resolve")
-async def resolve_chat_escalation(esc_id: int, note: str, token: str = Depends(verify_token)):
+async def resolve_chat_escalation(esc_id: int, note: str, token: str = Depends(verify_admin_token)):
     """Mark a sensitive query alert as resolved."""
     ChatEscalationEngine.resolve_escalation(esc_id, note)
     return {"message": "Alert resolved"}
 
 
 @app.post("/api/admin/escalations/workflow/{esc_id}/resolve")
-async def resolve_workflow_escalation(esc_id: int, note: str, token: str = Depends(verify_token)):
+async def resolve_workflow_escalation(esc_id: int, note: str, token: str = Depends(verify_admin_token)):
     """Mark a workflow escalation as resolved."""
     LeaveWorkflowEngine.resolve_escalation(esc_id, note)
     return {"message": "Workflow escalation resolved"}
 
 
 @app.get("/api/admin/config")
-async def get_config(token: str = Depends(verify_token)):
+async def get_config(token: str = Depends(verify_admin_token)):
     """Get current AI model configuration."""
     if os.path.exists("config.json"):
         with open("config.json", "r") as f:
@@ -710,7 +765,7 @@ async def get_config(token: str = Depends(verify_token)):
 
 
 @app.post("/api/admin/config")
-async def update_config(config: ConfigUpdate, token: str = Depends(verify_token)):
+async def update_config(config: ConfigUpdate, token: str = Depends(verify_admin_token)):
     """Update AI model configuration."""
     with open("config.json", "w") as f:
         json.dump({"model": config.model}, f)
@@ -720,7 +775,7 @@ async def update_config(config: ConfigUpdate, token: str = Depends(verify_token)
 # ========== MULTI-MODAL RAG Endpoints (New) ==========
 
 @app.post("/api/admin/multimodal/upload")
-async def upload_multimodal_file(file: UploadFile = File(...), token: str = Depends(verify_token)):
+async def upload_multimodal_file(file: UploadFile = File(...), token: str = Depends(verify_admin_token)):
     """Upload and process any media/doc for Multi-Modal RAG."""
     os.makedirs("documents/multimodal", exist_ok=True)
     file_path = os.path.join("documents/multimodal", file.filename)
@@ -744,7 +799,7 @@ async def upload_multimodal_file(file: UploadFile = File(...), token: str = Depe
 
 
 @app.post("/api/admin/multimodal/search")
-async def search_multimodal(request: dict, token: str = Depends(verify_token)):
+async def search_multimodal(request: dict, token: str = Depends(verify_admin_token)):
     """Search across multi-modal indexed content."""
     query = request.get("query", "")
     top_k = request.get("top_k", 5)
@@ -757,7 +812,7 @@ async def search_multimodal(request: dict, token: str = Depends(verify_token)):
 
 
 @app.get("/api/admin/multimodal/files")
-async def list_multimodal_files(token: str = Depends(verify_token)):
+async def list_multimodal_files(token: str = Depends(verify_admin_token)):
     """Get list of all indexed multi-modal files."""
     try:
         conn = sqlite3.connect("queries.db")
@@ -772,7 +827,7 @@ async def list_multimodal_files(token: str = Depends(verify_token)):
 
 
 @app.get("/api/admin/multimodal/stats")
-async def get_multimodal_stats(token: str = Depends(verify_token)):
+async def get_multimodal_stats(token: str = Depends(verify_admin_token)):
     """Get analytics for the Multi-Modal system."""
     try:
         conn = sqlite3.connect("queries.db")

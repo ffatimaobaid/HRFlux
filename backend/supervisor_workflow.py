@@ -12,6 +12,8 @@ import logging
 from datetime import datetime
 
 from chat_groq_with_retry import create_chat_groq_with_retry
+from config import get_current_gemini_key, rotate_gemini_key
+from langchain_google_genai import ChatGoogleGenerativeAI
 from leave_bot_tools import leave_bot_tools
 from escalation_tools import escalation_bot_tools
 from docu_tools import docu_bot_tools
@@ -31,6 +33,17 @@ def get_llm():
     return create_chat_groq_with_retry(
         model_name="llama-3.3-70b-versatile",
         temperature=0.2,  # Low temperature for operational accuracy
+        max_tokens=4096
+    )
+
+def get_gemini_llm():
+    """Returns a fresh Gemini client with rotation support."""
+    from config import GEMINI_MODEL
+    from gemini_llm import ChatGoogleGenerativeAIWithRotation
+    return ChatGoogleGenerativeAIWithRotation(
+        model=GEMINI_MODEL,
+        temperature=0.2,
+        google_api_key=get_current_gemini_key(),
         max_tokens=4096
     )
 
@@ -193,8 +206,23 @@ def setup_hrflux_agent():
     
     return agent_graph
 
-# Global instance
+# Global instances for Groq and Gemini agents
 hrflux_agent = setup_hrflux_agent()
+
+def setup_gemini_agent():
+    """Builds and returns the Gemini version of the smart agent."""
+    memory = MemorySaver()
+    llm = get_gemini_llm()
+    
+    agent_graph = create_react_agent(
+        llm,
+        tools=master_tools,
+        checkpointer=memory,
+        prompt=SYSTEM_PROMPT
+    )
+    return agent_graph
+
+gemini_agent = setup_gemini_agent()
 
 # If other modules need compatibility, we provide a wrapper
 class AgentStateShim(TypedDict):
@@ -240,16 +268,40 @@ def invoke_agent_legacy(state: AgentStateShim):
         # PRIMARY: Attempt Groq Agent invocation
         result = hrflux_agent.invoke({"messages": [input_message]}, config)
     except Exception as e:
-        logger.warning(f"Groq primary assistant failed: {e}. Falling back to Gemini...")
-        # FALLBACK: Use Gemini 1.5 Flash directly if Groq fails
+        logger.warning(f"Groq primary assistant failed: {e}. Falling back to Smart Gemini Agent...")
+        
+        # FALLBACK: Use the full-featured Gemini Agent Graph with tool parity
         try:
-            from gemini_llm import query_gemini
-            fallback_answer = query_gemini([], f"{contextual_prompt}")
-            from langchain_core.messages import AIMessage
-            result = {"messages": [HumanMessage(content=query), AIMessage(content=fallback_answer)]}
+            # We must use a unique thread ID for Gemini to avoid state collisions if needed, 
+            # but usually thread_{user} is fine as it's separate from Groq's local memory object.
+            
+            # ATTEMPT FALLBACK WITH ROTATION support
+            from config import get_current_gemini_key
+            for attempt in range(2): # Try rotation if needed
+                try:
+                    result = gemini_agent.invoke({"messages": [input_message]}, config)
+                    break 
+                except Exception as gem_e:
+                    if ("quota" in str(gem_e).lower() or "429" in str(gem_e)) and attempt < 1:
+                        logger.warning(f"Gemini quota hit, rotating key...")
+                        rotate_gemini_key()
+                        # We need to recreate the agent/llm if we want to update the key immediately
+                        # but ChatGoogleGenerativeAI might need a fresh instance.
+                        # For now, let's just use the fallback shim if the graph fails.
+                        continue
+                    raise gem_e
+
         except Exception as gemini_e:
-            logger.error(f"Critical Fallback Failure: {gemini_e}")
-            raise e # Re-raise original Groq error if Gemini also fails
+            logger.error(f"Critical Fallback Failure (Gemini Agent): {gemini_e}")
+            # Final secondary fallback to raw Gemini text (very robust)
+            try:
+                from gemini_llm import query_gemini
+                fallback_answer = query_gemini([], f"User '{user}' asks: {query} (Note: System context: Date={date_str}, Day={day_str})")
+                from langchain_core.messages import AIMessage
+                result = {"messages": [HumanMessage(content=query), AIMessage(content=fallback_answer)]}
+            except Exception as final_e:
+                logger.error(f"Total System Failure: {final_e}")
+                raise e # Re-raise original Groq error
     
     # Return the format that agent.py expects
     return {"messages": result["messages"]}

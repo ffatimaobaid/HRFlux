@@ -29,19 +29,19 @@ export default function Sidebar({ onClearChat }: { onClearChat?: () => void }) {
     <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-screen sticky top-0">
       <div className="p-6">
         <div className="flex items-center gap-3 mb-8">
-          <div className="bg-indigo-600 p-2 rounded-lg text-white">
+          <div className="bg-[#7b2ff7] p-2 rounded-lg text-white">
             <MessageSquare size={20} />
           </div>
           <span className="text-xl font-bold tracking-tight">HRFLUX</span>
         </div>
 
-        <div className="mb-8 p-4 bg-indigo-50 rounded-2xl flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-200 rounded-full flex items-center justify-center text-indigo-700 font-bold">
+        <div className="mb-8 p-4 bg-[#f4effc] rounded-2xl flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#e0d4fc] rounded-full flex items-center justify-center text-[#5b1ab5] font-bold">
             {user?.username?.charAt(0).toUpperCase()}
           </div>
           <div className="overflow-hidden">
-            <p className="text-sm font-bold text-indigo-900 truncate">{user?.username}</p>
-            <p className="text-xs text-indigo-600">Employee</p>
+            <p className="text-sm font-bold text-[#3E1287] truncate">{user?.username}</p>
+            <p className="text-xs text-[#7b2ff7]">Employee</p>
           </div>
         </div>
 
@@ -54,7 +54,7 @@ export default function Sidebar({ onClearChat }: { onClearChat?: () => void }) {
                   whileHover={{ x: 4 }}
                   className={`flex items-center justify-between p-3 rounded-xl transition-all ${
                     isActive 
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
+                      ? 'bg-[#7b2ff7] text-white shadow-lg shadow-indigo-200' 
                       : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >

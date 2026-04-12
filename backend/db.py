@@ -159,7 +159,13 @@ def get_all_chunks():
 def save_log(user, question, answer):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute("INSERT INTO logs (user, question, answer) VALUES (?, ?, ?)", (user, question, answer))
+    # Defensive casting for SQLite binding
+    user_str = str(user) if user is not None else ""
+    question_str = str(question) if question is not None else ""
+    answer_str = str(answer) if answer is not None else ""
+    
+    c.execute("INSERT INTO logs (user, question, answer) VALUES (?, ?, ?)", 
+              (user_str, question_str, answer_str))
     conn.commit()
     conn.close()
 
@@ -312,14 +318,14 @@ def login_user(username, password):
     return None
 
 
-def add_employee_task(employee_id, title, description, deadline, event_type, status='pending'):
+def add_employee_task(employee_id, title, description, deadline, event_type, start_time=None, end_time=None, status='pending'):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     try:
         c.execute("""
-            INSERT INTO employee_tasks (employee_id, title, description, deadline, event_type, status)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (employee_id, title, description, deadline, event_type, status))
+            INSERT INTO employee_tasks (employee_id, title, description, deadline, event_type, status, start_time, end_time)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (employee_id, title, description, deadline, event_type, status, start_time, end_time))
         conn.commit()
         return True
     except Exception as e:
@@ -330,13 +336,13 @@ def add_employee_task(employee_id, title, description, deadline, event_type, sta
 
 def get_employee_tasks(employee_id):
     conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
     c = conn.cursor()
     c.execute("SELECT * FROM employee_tasks WHERE employee_id = ? ORDER BY COALESCE(deadline, '9999-12-31') ASC", (employee_id,))
     rows = c.fetchall()
     conn.close()
     
-    columns = ['id', 'employee_id', 'title', 'description', 'deadline', 'event_type', 'status', 'created_at']
-    return [dict(zip(columns, row)) for row in rows]
+    return [dict(row) for row in rows]
 
 def update_employee_task_status(task_id, status):
     conn = sqlite3.connect(DB_PATH)

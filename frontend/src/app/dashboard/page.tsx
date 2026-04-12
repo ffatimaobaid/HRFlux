@@ -19,6 +19,7 @@ import {
   FileDown,
   Bell
 } from 'lucide-react';
+import { Input, Button, notification } from 'antd';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -120,6 +121,7 @@ export default function Dashboard() {
   const [notifications, setNotifications] = useState<ProactiveNotification[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const lastSeenNotifs = useRef<Set<number>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -171,11 +173,26 @@ export default function Dashboard() {
   const loadNotifications = async () => {
     try {
       const res = await hrApi.getProactiveNotifications();
-      const dismissed = getDismissedIds();
-      // Filter out any notifications the user already dismissed this session
       const visible = (res.data as ProactiveNotification[]).filter(
         (n) => !n.id || !dismissed.has(n.id)
       );
+      
+      // Check for new "Approved" notifications to show a Toast
+      visible.forEach(n => {
+        if (n.id && !lastSeenNotifs.current.has(n.id)) {
+          lastSeenNotifs.current.add(n.id);
+          if (n.title.includes('Approved') || n.type === 'success') {
+            notification.success({
+              message: n.title,
+              description: n.message,
+              placement: 'topRight',
+              duration: 10,
+              style: { borderRadius: '24px', border: '1px solid #b7eb8f', backgroundColor: '#f6ffed' }
+            });
+          }
+        }
+      });
+
       setNotifications(visible);
     } catch (err) {
       console.error('Failed to load notifications', err);
@@ -279,68 +296,68 @@ export default function Dashboard() {
         <header className="h-16 border-b border-gray-100 bg-white flex items-center justify-between px-8">
           <h1 className="text-xl font-bold text-gray-800">🤖 Chat Assistant</h1>
           {/* Proactive Notifications Header Icon */}
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-gray-500">Model: Gemini 1.5 Flash</span>
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium text-gray-500">Model: Gemini 1.5 Flash</span>
+          
+          {/* Notification Bell */}
+          <div className="relative" ref={notifRef}>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsNotifOpen(!isNotifOpen)}
+              className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#7b2ff7] hover:bg-[#f4effc] rounded-xl transition-all relative"
+            >
+              <Bell size={20} />
+              {notifications.length > 0 && (
+                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
+              )}
+            </motion.button>
 
-            {/* Notification Bell */}
-            <div className="relative" ref={notifRef}>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className="p-2.5 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all relative"
-              >
-                <Bell size={20} />
-                {notifications.length > 0 && (
-                  <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
-                )}
-              </motion.button>
-
-              <AnimatePresence>
-                {isNotifOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-80 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-[100]"
-                  >
-                    <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                      <h4 className="font-black text-gray-800 tracking-tight">Notifications</h4>
-                      <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full uppercase">
-                        {notifications.length} New
-                      </span>
-                    </div>
-                    <div className="max-h-96 overflow-y-auto">
-                      {notifications.length > 0 ? (
-                        <SmartNotification
-                          isDropdown
-                          notifications={notifications}
-                          onAction={handleNotifAction}
-                          onClose={handleCloseNotification}
-                        />
-                      ) : (
-                        <div className="p-8 text-center">
-                          <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <Bell size={20} className="text-gray-300" />
-                          </div>
-                          <p className="text-sm font-bold text-gray-400">All caught up!</p>
+            <AnimatePresence>
+              {isNotifOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute right-0 mt-3 w-80 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-[100]"
+                >
+                  <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+                    <h4 className="font-black text-gray-800 tracking-tight">Notifications</h4>
+                    <span className="text-[10px] font-bold bg-[#e0d4fc] text-[#5b1ab5] px-2 py-0.5 rounded-full uppercase">
+                      {notifications.length} New
+                    </span>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.length > 0 ? (
+                      <SmartNotification 
+                        isDropdown 
+                        notifications={notifications}
+                        onAction={handleNotifAction}
+                        onClose={handleCloseNotification}
+                      />
+                    ) : (
+                      <div className="p-8 text-center">
+                        <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Bell size={20} className="text-gray-300" />
                         </div>
-                      )}
-                    </div>
-                    {notifications.length > 0 && (
-                      <div className="p-3 bg-gray-50 border-t border-gray-100 text-center">
-                        <button className="text-[10px] font-black text-indigo-600 hover:text-indigo-700 uppercase tracking-widest">
-                          Clear All
-                        </button>
+                        <p className="text-sm font-bold text-gray-400">All caught up!</p>
                       </div>
                     )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                  </div>
+                  {notifications.length > 0 && (
+                    <div className="p-3 bg-gray-50 border-t border-gray-100 text-center">
+                      <button className="text-[10px] font-black text-[#7b2ff7] hover:text-[#5b1ab5] uppercase tracking-widest">
+                        Clear All
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
-            <div className="w-10 h-10 rounded-full border-2 border-indigo-100 p-0.5">
-              <div className="w-full h-full bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 font-bold">
+          <div className="w-10 h-10 rounded-full border-2 border-[#e0d4fc] p-0.5">
+              <div className="w-full h-full bg-[#f4effc] rounded-full flex items-center justify-center text-[#7b2ff7] font-bold">
                 {user?.username?.charAt(0).toUpperCase()}
               </div>
             </div>
@@ -350,7 +367,7 @@ export default function Dashboard() {
         {/* Inline Proactive Notifications */}
         <div className="px-8 pt-8">
           <SmartNotification
-            notifications={notifications}
+            notifications={notifications.slice(0, 2)}
             onAction={handleNotifAction}
             onClose={handleCloseNotification}
             isDropdown={false}
@@ -370,7 +387,7 @@ export default function Dashboard() {
                 className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 hover:border-indigo-200 transition-all text-left group shadow-sm"
               >
                 <div className={`p-2 rounded-xl ${action.color}`}>{action.icon}</div>
-                <span className="text-sm font-bold text-gray-700 group-hover:text-indigo-600 transition-colors">
+                <span className="text-sm font-bold text-gray-700 group-hover:text-[#7b2ff7] transition-colors">
                   {action.label}
                 </span>
               </motion.button>
@@ -385,7 +402,7 @@ export default function Dashboard() {
 
             {messages.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
-                <Bot size={64} className="mb-4 text-indigo-600" />
+                <Bot size={64} className="mb-4 text-[#7b2ff7]" />
                 <h2 className="text-2xl font-bold mb-2">Hello, {user?.username}!</h2>
                 <p className="max-w-xs">
                   I am your AI HR assistant. Ask me anything about policies, leaves, or documents.
@@ -402,10 +419,11 @@ export default function Dashboard() {
               >
                 <div className={`flex gap-3 max-w-[80%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                   <div
-                    className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ${msg.role === 'user'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-white border border-gray-200 text-indigo-600'
-                      }`}
+                    className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ${
+                      msg.role === 'user'
+                        ? 'bg-[#7b2ff7] text-white'
+                        : 'bg-white border border-gray-200 text-[#7b2ff7]'
+                    }`}
                   >
                     {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
                   </div>
@@ -413,10 +431,11 @@ export default function Dashboard() {
                   <div className="space-y-2">
                     {/* Message bubble */}
                     <div
-                      className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${msg.role === 'user'
-                        ? 'bg-indigo-600 text-white rounded-tr-none'
-                        : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-                        }`}
+                      className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${
+                        msg.role === 'user'
+                          ? 'bg-[#7b2ff7] text-white rounded-tr-none'
+                          : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
+                      }`}
                     >
                       {msg.content}
                     </div>
@@ -436,7 +455,7 @@ export default function Dashboard() {
                           <button
                             key={sidx}
                             onClick={() => handleSend(sug)}
-                            className="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors border border-indigo-100"
+                            className="text-xs bg-[#f4effc] text-[#5b1ab5] font-semibold px-3 py-1.5 rounded-full hover:bg-[#e0d4fc] transition-colors border border-[#e0d4fc]"
                           >
                             {sug}
                           </button>
@@ -451,7 +470,7 @@ export default function Dashboard() {
             {loading && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-indigo-600">
+                  <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-[#7b2ff7]">
                     <Bot size={16} />
                   </div>
                   <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-none flex items-center gap-2">
@@ -467,24 +486,25 @@ export default function Dashboard() {
         {/* Input area */}
         <div className="p-8 pt-0">
           <div className="relative group">
-            <input
-              type="text"
+            <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
               placeholder="Ask about HR policies..."
-              className="w-full bg-white border border-gray-100 rounded-2xl p-5 pr-32 shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm font-medium"
+              size="large"
+              className="w-full rounded-2xl p-4 pr-32 font-medium"
+              style={{ boxShadow: '0 4px 12px rgba(123, 47, 247, 0.05)' }}
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold tracking-tight">
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10">
+              <div className="p-1 px-2 bg-[#f4effc] text-[#7b2ff7] rounded-lg text-[10px] font-bold tracking-tight">
                 AI ACTIVE
               </div>
-              <button
+              <Button
+                type="primary"
                 onClick={() => handleSend(input)}
-                className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-md active:scale-95"
-              >
-                <Send size={18} />
-              </button>
+                className="h-10 w-10 flex items-center justify-center rounded-xl shadow-md"
+                icon={<Send size={16} />}
+              />
             </div>
           </div>
           <p className="text-center text-[10px] text-gray-400 mt-4 font-medium tracking-wide">

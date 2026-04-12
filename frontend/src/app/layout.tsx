@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   description: "Modern, AI-powered HR management system.",
 };
 
+import { AntdRegistry } from "@ant-design/nextjs-registry";
+import { ConfigProvider } from "antd";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,9 +32,35 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <AntdRegistry>
+          <ConfigProvider
+            theme={{
+              token: {
+                colorPrimary: '#7b2ff7',
+                borderRadius: 8,
+                colorBgContainer: '#ffffff',
+                colorBgLayout: '#faf5ff',
+                fontFamily: 'var(--font-geist-sans)',
+                controlHeight: 40,
+                colorBorder: '#f0f0f0',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+              },
+              components: {
+                Button: {
+                  boxShadow: 'none',
+                  controlOutline: 'none',
+                },
+                Input: {
+                  activeShadow: 'none',
+                }
+              }
+            }}
+          >
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </ConfigProvider>
+        </AntdRegistry>
       </body>
     </html>
   );

@@ -1,5 +1,5 @@
 import os
-from config import get_current_api_key, rotate_api_key
+from config import get_current_gemini_key, rotate_gemini_key
 from langchain_core.messages import SystemMessage, HumanMessage
 import json
 import os
@@ -91,8 +91,9 @@ def query_gemini_with_retry(context_chunks, question, model_name="gemini-2.0-fla
             llm_gemini = ChatGoogleGenerativeAI(
                 model=model_name,
                 temperature=0.3,
-                google_api_key=os.getenv("GOOGLE_API_KEY"),
-                max_tokens=500
+                google_api_key=get_current_gemini_key(),
+                max_tokens=500,
+                max_retries=1 # Disable aggressive internal retries
             )
             response = llm_gemini.invoke(messages)
             if response and hasattr(response, 'content'):
@@ -102,11 +103,30 @@ def query_gemini_with_retry(context_chunks, question, model_name="gemini-2.0-fla
         except Exception as e:
             error_str = str(e)
             print(f"Gemini Attempt {attempt + 1}/{max_retries} failed: {error_str}")
+            
+            # Check for Gemini specific rate limits
+            if "429" in error_str or "quota" in error_str.lower() or "limit" in error_str.lower():
+                if attempt < max_retries - 1:
+                    print(f"🔄 Gemini quota hit, rotating key...")
+                    rotate_gemini_key()
+                    time.sleep(2)
+                    continue
+            
             if attempt < max_retries - 1:
                 time.sleep(2)
                 continue
             else:
                 return f"Gemini Error: {error_str}", False
+
+class ChatGoogleGenerativeAIWithRotation(ChatGoogleGenerativeAI):
+    """Subclass that always uses the current Gemini key from rotation."""
+    def invoke(self, *args, **kwargs):
+        from config import get_current_gemini_key
+        self.google_api_key = get_current_gemini_key()
+        # Ensure we don't do aggressive internal retries when quota is hit
+        if hasattr(self, 'max_retries'):
+            self.max_retries = 1
+        return super().invoke(*args, **kwargs)
 
 def query_gemini(context_chunks, question, model_name="gemini-2.5-flash", chat_history=None, hr_knowledge=None):
     """Wrapper for backward compatibility"""

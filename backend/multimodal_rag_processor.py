@@ -44,21 +44,17 @@ class MultiModalRAGProcessor:
     """Multi-Modal RAG Processor for admin document upload and analysis"""
     
     def __init__(self):
-        # Initialize embedding models
-        try:
-            self.text_embedder = SentenceTransformer('all-MiniLM-L6-v2') if SentenceTransformer else None
-            self.clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32") if CLIPModel else None
-            self.clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32") if CLIPProcessor else None
-            self.whisper_processor = WhisperProcessor.from_pretrained("openai/whisper-base") if WhisperProcessor else None
-            self.whisper_model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-base") if WhisperForConditionalGeneration else None
-        except Exception as e:
-            logger.error(f"Error loading AI models: {e}")
-            self.text_embedder = self.clip_model = self.clip_processor = self.whisper_processor = self.whisper_model = None
+        # Models will be lazily loaded in _ensure_models_loaded()
+        self.text_embedder = None
+        self.clip_model = None
+        self.clip_processor = None
+        self.whisper_processor = None
+        self.whisper_model = None
+        self._models_loaded = False
         
-        # Initialize ChromaDB (Modern Persistent Client)
+        # Initialize ChromaDB (Keep this in __init__ as it's local and fast)
         try:
             self.chroma_client = chromadb.PersistentClient(path="chroma_multimodal_storage")
-            # Create or get collection
             self.collection = self.chroma_client.get_or_create_collection(
                 name="multimodal_documents",
                 metadata={"hnsw:space": "cosine"}
@@ -74,11 +70,38 @@ class MultiModalRAGProcessor:
             'audio': ['.mp3', '.wav', '.m4a', '.flac', '.ogg'],
             'video': ['.mp4', '.avi', '.mov', '.mkv', '.webm']
         }
+
+    def _ensure_models_loaded(self):
+        """Lazily load expensive AI models only when needed."""
+        if self._models_loaded:
+            return
+            
+        logger.info("⚡ Lazily loading AI models (SentenceTransformer, CLIP, Whisper)...")
+        try:
+            self.text_embedder = SentenceTransformer('all-MiniLM-L6-v2') if SentenceTransformer else None
+            self.clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32") if CLIPModel else None
+            self.clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32") if CLIPProcessor else None
+            self.whisper_processor = WhisperProcessor.from_pretrained("openai/whisper-base") if WhisperProcessor else None
+            self.whisper_model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-base") if WhisperForConditionalGeneration else None
+            self._models_loaded = True
+            logger.info("✅ AI models loaded successfully.")
+        except Exception as e:
+            logger.error(f"❌ Error loading AI models: {e}. System will proceed with reduced capabilities.")
+            # We don't set _models_loaded to True here to allow retry later if needed, 
+            # or we could set it to prevent infinite retries.
+        
+        self.supported_formats = {
+            'text': ['.txt', '.md', '.csv'],
+            'documents': ['.pdf', '.docx', '.pptx'],
+            'images': ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'],
+            'audio': ['.mp3', '.wav', '.m4a', '.flac', '.ogg'],
+            'video': ['.mp4', '.avi', '.mov', '.mkv', '.webm']
+        }
     
     def process_file_for_rag(self, file_path: str, filename: str, 
                             uploaded_by: str = "admin") -> Dict[str, Any]:
         """Main processing function for multi-modal RAG"""
-        
+        self._ensure_models_loaded()
         try:
             # Detect file type
             file_type = self._detect_file_type(file_path)
@@ -281,6 +304,7 @@ class MultiModalRAGProcessor:
             logger.error(f"Metadata DB error: {e}")
 
     def multimodal_search(self, query: str, top_k: int = 5) -> List[Dict]:
+        self._ensure_models_loaded()
         if not self.collection or not self.text_embedder: return []
         query_emb = self.text_embedder.encode([query])[0].tolist()
         results = self.collection.query(query_embeddings=[query_emb], n_results=top_k)

@@ -131,6 +131,8 @@ def create_enhanced_schema():
             title TEXT NOT NULL,
             description TEXT,
             deadline TEXT,
+            start_time TEXT,
+            end_time TEXT,
             event_type TEXT CHECK(event_type IN ('task', 'event', 'deadline', 'meeting')),
             status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'completed', 'cancelled')),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -187,6 +189,20 @@ def create_enhanced_schema():
         )
     """)
 
+    # ========== SECURITY AUDIT LOGS TABLE (New) ==========
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS security_audit_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT,
+            action TEXT NOT NULL,
+            target_id TEXT,
+            ip_address TEXT,
+            status TEXT DEFAULT 'success',
+            metadata TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
     # ========== SLA RULES TABLE (New) ==========
     c.execute("""
         CREATE TABLE IF NOT EXISTS sla_rules (

@@ -14,9 +14,11 @@ import {
   ArrowUpRight,
   TrendingUp,
   Briefcase,
-  ExternalLink
+  ExternalLink,
+  Bot
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { Button } from 'antd';
 
 interface Stats {
   total_employees: number;
@@ -86,7 +88,7 @@ export default function AdminDashboard() {
   };
 
   const kpiCards = [
-    { label: 'Total Employees', value: stats.total_employees, icon: <Users />, color: 'bg-indigo-50 text-indigo-600', trend: '+2% from last month' },
+    { label: 'Total Employees', value: stats.total_employees, icon: <Users />, color: 'bg-[#f4effc] text-[#7b2ff7]', trend: '+2% from last month' },
     { label: 'Pending Leaves', value: stats.pending_leaves, icon: <Clock />, color: 'bg-orange-50 text-orange-600', trend: '-5% from last week' },
     { label: 'Active Escalations', value: stats.active_escalations, icon: <AlertCircle />, color: 'bg-red-50 text-red-600', trend: 'Critical attention' },
   ];
@@ -102,12 +104,12 @@ export default function AdminDashboard() {
             <p className="text-gray-500 font-medium mt-1">Real-time overview of HR operations and system health.</p>
           </div>
           <div className="flex gap-3">
-             <button className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold shadow-sm hover:bg-gray-50 transition-all flex items-center gap-2">
-               <TrendingUp size={16} /> Reports
-             </button>
-             <button className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center gap-2">
-               <Briefcase size={16} /> Hire New
-             </button>
+             <Button size="large" className="font-bold rounded-xl" icon={<TrendingUp size={16} />}>
+               Reports
+             </Button>
+             <Button type="primary" size="large" className="font-bold rounded-xl shadow-md" icon={<Briefcase size={16} />}>
+               Hire New
+             </Button>
           </div>
         </header>
 
@@ -119,14 +121,14 @@ export default function AdminDashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
               key={card.label}
-              className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100/50 group hover:shadow-xl hover:shadow-indigo-900/5 transition-all"
+              className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100/50 group hover:shadow-xl hover:shadow-[#3E1287]/5 transition-all"
             >
               <div className="flex items-start justify-between mb-6">
                 <div className={`p-4 rounded-2xl ${card.color}`}>
                   {React.cloneElement(card.icon as React.ReactElement, { size: 28 })}
                 </div>
-                <div className="p-2 bg-gray-50 rounded-lg group-hover:bg-indigo-50 transition-colors">
-                  <ArrowUpRight size={20} className="text-gray-400 group-hover:text-indigo-500" />
+                <div className="p-2 bg-gray-50 rounded-lg group-hover:bg-[#f4effc] transition-colors">
+                  <ArrowUpRight size={20} className="text-gray-400 group-hover:text-[#904df9]" />
                 </div>
               </div>
               <h3 className="text-4xl font-black text-gray-900 mb-1">{card.value}</h3>
@@ -147,7 +149,7 @@ export default function AdminDashboard() {
                 <h2 className="text-xl font-bold flex items-center gap-2">
                    <Clock className="text-orange-500" /> Pending Leave Approvals
                 </h2>
-                <button className="text-indigo-600 text-sm font-bold hover:underline flex items-center gap-1">
+                <button className="text-[#7b2ff7] text-sm font-bold hover:underline flex items-center gap-1">
                    View all <ExternalLink size={14} />
                 </button>
              </div>
@@ -168,12 +170,12 @@ export default function AdminDashboard() {
                       className="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between group hover:bg-white hover:shadow-lg transition-all"
                     >
                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-indigo-600 font-black">
+                          <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#7b2ff7] font-black">
                             {(req.full_name || req.employee_id).substring(0, 2)}
                           </div>
                           <div>
                              <h4 className="font-bold text-gray-900">{req.full_name || req.employee_id}</h4>
-                             <p className="text-[10px] text-indigo-600 font-black uppercase tracking-widest">{req.department || 'Employee'}</p>
+                             <p className="text-[10px] text-[#7b2ff7] font-black uppercase tracking-widest">{req.department || 'Employee'}</p>
                              <p className="text-xs text-gray-500 font-medium mt-1">
                                 {req.leave_type.toUpperCase()} • {req.total_days} Days ({format(new Date(req.start_date), 'MMM dd')} - {format(new Date(req.end_date), 'MMM dd')})
                              </p>
@@ -203,13 +205,13 @@ export default function AdminDashboard() {
 
           {/* Quick Actions / System Status */}
           <aside className="space-y-8">
-             <div className="bg-indigo-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
-                <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-500 rounded-full blur-3xl opacity-50" />
+             <div className="bg-[#7b2ff7] rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-[#f4effc]0 rounded-full blur-3xl opacity-50" />
                 <div className="relative z-10">
                    <h3 className="text-xl font-bold mb-4">Quick Insights</h3>
                    <div className="space-y-6">
                       <div className="flex items-center gap-4">
-                         <div className="w-10 h-10 bg-indigo-500/50 rounded-xl flex items-center justify-center">
+                         <div className="w-10 h-10 bg-[#f4effc]0/50 rounded-xl flex items-center justify-center">
                             <TrendingUp size={20} />
                          </div>
                          <div>
@@ -217,45 +219,83 @@ export default function AdminDashboard() {
                             <p className="text-sm font-bold">94% response rate today</p>
                          </div>
                       </div>
-                      <button className="w-full bg-white text-indigo-600 p-4 rounded-2xl font-bold hover:bg-indigo-50 transition-all text-sm shadow-lg">
+                      <button className="w-full bg-white text-[#7b2ff7] p-4 rounded-2xl font-bold hover:bg-[#f4effc] transition-all text-sm shadow-lg">
                          Run System Audit
                       </button>
                    </div>
                 </div>
              </div>
              
-             <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col">
-                 <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center">
-                       <AlertCircle size={20} />
+             <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col relative overflow-hidden">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-[50px] rounded-full pointer-events-none" />
+                 <div className="flex items-center justify-between mb-6 relative z-10">
+                    <div className="flex items-center gap-3">
+                       <div className="w-10 h-10 bg-gradient-to-br from-red-50 to-orange-50 text-red-500 rounded-xl flex items-center justify-center shadow-sm border border-red-100">
+                          <AlertCircle size={20} />
+                       </div>
+                       <div>
+                          <h3 className="text-lg font-bold text-gray-900">Priority Escalations</h3>
+                          <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-0.5">Needs immediate action</p>
+                       </div>
                     </div>
-                    <h3 className="text-lg font-bold">Active Escalations</h3>
+                    {escalations.length > 0 && (
+                      <span className="bg-red-100 text-red-600 text-xs font-black px-2.5 py-1 rounded-lg">
+                        {escalations.length} Active
+                      </span>
+                    )}
                  </div>
                  
-                 <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                 <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar relative z-10">
                     {escalations.length === 0 ? (
-                      <p className="text-xs text-gray-400 text-center py-10 font-bold">No active escalations.</p>
+                      <div className="flex flex-col items-center justify-center py-10 opacity-60">
+                        <CheckCircle2 size={32} className="text-green-500 mb-3" />
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">No active escalations</p>
+                      </div>
                     ) : (
                       escalations.map((esc) => (
-                        <div key={esc.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-red-100 transition-all">
-                           <div className="flex items-center justify-between mb-2">
-                              <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase tracking-widest ${
-                                esc.type === 'chat' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'
+                        <motion.div 
+                           initial={{ opacity: 0, y: 10 }}
+                           animate={{ opacity: 1, y: 0 }}
+                           key={esc.id} 
+                           className="group relative p-5 bg-white rounded-2xl border border-gray-100 hover:border-red-200 shadow-sm hover:shadow-md hover:shadow-red-900/5 transition-all duration-300"
+                        >
+                           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 bg-red-500 rounded-r-full group-hover:h-3/4 transition-all duration-300" />
+                           <div className="flex items-start justify-between mb-3">
+                              <span className={`text-[10px] px-2.5 py-1 rounded-lg font-bold flex items-center gap-1.5 shadow-sm border ${
+                                esc.type === 'chat' 
+                                  ? 'bg-red-50 text-red-600 border-red-100' 
+                                  : 'bg-orange-50 text-orange-600 border-orange-100'
                               }`}>
+                                {esc.type === 'chat' ? <Bot size={12} /> : <Clock size={12} />}
                                 {esc.type === 'chat' ? 'SENSITIVE AI' : 'STALE WORKFLOW'}
                               </span>
-                              <span className="text-[10px] text-gray-400 font-bold">#{esc.db_id}</span>
+                              <span className="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded-md border border-gray-100">ID: {esc.db_id}</span>
                            </div>
-                           <p className="text-xs font-bold text-gray-900 mb-1">{esc.source}</p>
-                           <p className="text-[11px] text-gray-500 line-clamp-2">{esc.description}</p>
+                           
+                           <h4 className="text-sm font-bold text-gray-900 mb-1 group-hover:text-red-600 transition-colors">{esc.source}</h4>
+                           <p className="text-[12px] text-gray-600 line-clamp-2 leading-relaxed">{esc.description}</p>
+                           
                            {esc.query && (
-                             <p className="text-[10px] text-gray-400 mt-2 bg-white/50 p-2 rounded-lg border border-gray-50 italic">"{esc.query}"</p>
+                             <div className="mt-3 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
+                               <p className="text-[11px] text-gray-500 italic flex items-start gap-2">
+                                 <span className="text-gray-300 font-serif text-lg leading-none">"</span>
+                                 {esc.query}
+                               </p>
+                             </div>
                            )}
-                           <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
-                              <span className="text-[9px] text-gray-400 font-bold italic">{format(new Date(esc.created_at), 'MMM dd, HH:mm')}</span>
-                              <Link href="/admin/escalations" className="text-[10px] text-indigo-600 font-black hover:underline">Review Details</Link>
+                           
+                           <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                              <span className="text-[10px] text-gray-500 font-medium bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                                {format(new Date(esc.created_at), 'MMM dd, HH:mm')}
+                              </span>
+                              <Link 
+                                href="/admin/escalations" 
+                                className="flex items-center gap-1 text-[11px] text-[#7b2ff7] bg-[#f4effc] px-3 py-1.5 rounded-lg font-bold group-hover:bg-[#7b2ff7] group-hover:text-white transition-all shadow-sm"
+                              >
+                                Resolve <ArrowUpRight size={12} className="opacity-70" />
+                              </Link>
                            </div>
-                        </div>
+                        </motion.div>
                       ))
                     )}
                  </div>

@@ -26,6 +26,8 @@ interface Task {
   title: string;
   description: string;
   deadline: string;
+  start_time?: string;
+  end_time?: string;
   event_type: string;
   status: 'pending' | 'completed';
 }
@@ -41,6 +43,8 @@ export default function CalendarPage() {
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [type, setType] = useState('task');
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('10:00');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -70,6 +74,8 @@ export default function CalendarPage() {
         title,
         description: desc,
         deadline: format(selectedDate, 'yyyy-MM-dd'),
+        start_time: startTime,
+        end_time: endTime,
         event_type: type
       });
       setShowAddForm(false);
@@ -233,7 +239,14 @@ export default function CalendarPage() {
                               <h3 className={`font-bold text-sm ${t.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-800'}`}>
                                 {t.title}
                               </h3>
-                              <p className="text-xs text-gray-500 mt-1">{t.description}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                {t.start_time && (
+                                  <span className="text-[10px] font-bold bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-md">
+                                    {t.start_time} {t.end_time ? `- ${t.end_time}` : ''}
+                                  </span>
+                                )}
+                                <p className="text-xs text-gray-500">{t.description}</p>
+                              </div>
                             </div>
                           </div>
                           {t.status === 'pending' && (
@@ -305,8 +318,31 @@ export default function CalendarPage() {
                       value={desc}
                       onChange={(e) => setDesc(e.target.value)}
                       placeholder="Details about this task..."
-                      className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm min-h-[100px]"
+                      className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm min-h-[80px]"
                     />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Start Time</label>
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">End Time</label>
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all text-sm"
+                        required
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
