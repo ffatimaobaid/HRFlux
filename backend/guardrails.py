@@ -140,8 +140,8 @@ class InputValidator:
             start_dt = datetime.strptime(start_date, '%Y-%m-%d')
             end_dt = datetime.strptime(end_date, '%Y-%m-%d')
             
-            if start_dt >= end_dt:
-                errors.append('End date must be after start date')
+            if start_dt > end_dt:
+                errors.append('End date must be on or after start date')
             
             if start_dt.year != end_dt.year:
                 errors.append('Leave requests should be within the same calendar year')

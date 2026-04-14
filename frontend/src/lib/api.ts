@@ -42,6 +42,7 @@ export const hrApi = {
   getAttendance: (id: string) => api.get(`/api/attendance/${id}`),
   getProactiveNotifications: () => api.get('/api/notifications/proactive'),
   updateNotification: (id: number, status: 'read' | 'dismissed') => api.patch(`/api/notifications/${id}`, { status }),
+  getAnnouncements: () => api.get('/api/announcements'),
 };
 
 export const taskApi = {
@@ -67,6 +68,8 @@ export const adminApi = {
   updateConfig: (data: any) => api.post('/api/admin/config', data),
   processLeave: (id: number, action: 'approve' | 'reject', comments?: string) => 
     api.post('/api/leave-approvals', { request_id: id, action, comments, approver_id: 'ADMIN' }),
+  createAnnouncement: (data: { title: string, content: string, priority?: string }) => 
+    api.post('/api/admin/announcements', data),
 };
 
 export default api;

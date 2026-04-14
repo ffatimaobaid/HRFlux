@@ -117,6 +117,7 @@ def create_enhanced_schema():
             reason TEXT,
             sensitivity_score REAL,
             status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'resolved', 'cancelled')),
+            conversation_summary TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             resolved_at DATETIME,
             resolution_notes TEXT
@@ -184,11 +185,23 @@ def create_enhanced_schema():
             action_id TEXT,
             action_params TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            expires_at DATETIME,
-            FOREIGN KEY (user_id) REFERENCES employees(employee_id)
+            expires_at DATETIME
         )
     """)
 
+    # ========== ANNOUNCEMENTS TABLE (New) ==========
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS announcements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            priority TEXT DEFAULT 'medium' CHECK(priority IN ('low', 'medium', 'high')),
+            created_by TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES employees(employee_id)
+        )
+    """)
+    
     # ========== SECURITY AUDIT LOGS TABLE (New) ==========
     c.execute("""
         CREATE TABLE IF NOT EXISTS security_audit_logs (

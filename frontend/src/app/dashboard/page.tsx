@@ -17,8 +17,11 @@ import {
   AlertCircle,
   Download,
   FileDown,
-  Bell
+  Bell,
+  Megaphone,
+  ArrowRight
 } from 'lucide-react';
+import { format } from 'date-fns';
 import { Input, Button, notification } from 'antd';
 
 interface Message {
@@ -114,7 +117,15 @@ function PdfDownloadCard({ filename, url }: { filename: string; url: string }) {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  
+  // Strict lockdown: Never show employee dashboard to an admin
+  if (authLoading || (user && user.role !== 'employee')) {
+    return <div className="h-screen bg-[#f8f9ff] flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-[#7b2ff7] border-t-transparent rounded-full animate-spin" />
+    </div>;
+  }
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -122,6 +133,9 @@ export default function Dashboard() {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const lastSeenNotifs = useRef<Set<number>>(new Set());
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [isAnnOpen, setIsAnnOpen] = useState(false);
+  const annRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -130,7 +144,7 @@ export default function Dashboard() {
         setIsNotifOpen(false);
       }
     }
-    if (isNotifOpen) {
+    if (isNotifOpen || isAnnOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
@@ -142,9 +156,13 @@ export default function Dashboard() {
     if (user) {
       loadHistory();
       loadNotifications();
+      loadAnnouncements();
 
       // Poll for new notifications every 30 seconds
-      const interval = setInterval(loadNotifications, 30000);
+      const interval = setInterval(() => {
+        loadNotifications();
+        loadAnnouncements();
+      }, 30000);
       return () => clearInterval(interval);
     }
   }, [user]);
@@ -172,6 +190,7 @@ export default function Dashboard() {
 
   const loadNotifications = async () => {
     try {
+      const dismissed = getDismissedIds();
       const res = await hrApi.getProactiveNotifications();
       const visible = (res.data as ProactiveNotification[]).filter(
         (n) => !n.id || !dismissed.has(n.id)
@@ -196,6 +215,15 @@ export default function Dashboard() {
       setNotifications(visible);
     } catch (err) {
       console.error('Failed to load notifications', err);
+    }
+  };
+
+  const loadAnnouncements = async () => {
+    try {
+      const res = await hrApi.getAnnouncements();
+      setAnnouncements(res.data || []);
+    } catch (err) {
+      console.error('Failed to load announcements', err);
     }
   };
 
@@ -356,6 +384,72 @@ export default function Dashboard() {
             </AnimatePresence>
           </div>
 
+          {/* Announcement Hub */}
+          <div className="relative" ref={annRef}>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsAnnOpen(!isAnnOpen)}
+              className={`p-2.5 rounded-xl transition-all relative ${
+                announcements.some(a => a.priority === 'high')
+                  ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
+                  : 'bg-gray-50 text-gray-400 hover:text-orange-500 hover:bg-orange-50'
+              }`}
+            >
+              <Megaphone size={20} className={announcements.length > 0 ? "animate-bounce" : ""} />
+              {announcements.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full border-2 border-white">
+                  {announcements.length}
+                </span>
+              )}
+            </motion.button>
+
+            <AnimatePresence>
+              {isAnnOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute right-0 mt-3 w-96 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-[100]"
+                >
+                  <div className="p-5 border-b border-gray-50 bg-orange-50/30 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                       <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
+                          <Megaphone size={16} />
+                       </div>
+                       <h4 className="font-black text-gray-800 tracking-tight">Company Broadcasts</h4>
+                    </div>
+                  </div>
+                  <div className="max-h-[500px] overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                    {announcements.length > 0 ? (
+                      announcements.map((ann, idx) => (
+                        <div key={idx} className={`p-4 rounded-2xl border ${
+                          ann.priority === 'high' ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'
+                        }`}>
+                           <div className="flex items-center justify-between mb-2">
+                              <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest ${
+                                ann.priority === 'high' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
+                              }`}>
+                                {ann.priority} Priority
+                              </span>
+                              <span className="text-[10px] text-gray-400 font-bold">{format(new Date(ann.created_at), 'MMM dd, HH:mm')}</span>
+                           </div>
+                           <h5 className="font-black text-gray-900 mb-1 leading-tight">{ann.title}</h5>
+                           <p className="text-xs text-gray-600 leading-relaxed">{ann.content}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-20 text-center opacity-40">
+                         <Megaphone size={48} className="mx-auto mb-4 text-gray-300" />
+                         <p className="font-bold">No active broadcasts</p>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           <div className="w-10 h-10 rounded-full border-2 border-[#e0d4fc] p-0.5">
               <div className="w-full h-full bg-[#f4effc] rounded-full flex items-center justify-center text-[#7b2ff7] font-bold">
                 {user?.username?.charAt(0).toUpperCase()}
@@ -364,15 +458,7 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {/* Inline Proactive Notifications */}
-        <div className="px-8 pt-8">
-          <SmartNotification
-            notifications={notifications.slice(0, 2)}
-            onAction={handleNotifAction}
-            onClose={handleCloseNotification}
-            isDropdown={false}
-          />
-        </div>
+        {/* The proactive notifications and latest announcement section has been removed to keep the chat area clean. */}
 
         {/* Quick Actions */}
         <div className="px-8 pt-6">

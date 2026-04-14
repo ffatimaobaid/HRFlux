@@ -30,12 +30,14 @@ export default function AdminMultiModal() {
   const [isSearching, setIsSearching] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<any>(null);
-  const { token } = useAuth();
+  const { user } = useAuth();
+  
+  const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('hrflux_token') || '' : '';
 
   const fetchFiles = async () => {
     try {
       const res = await fetch('http://localhost:8000/api/admin/multimodal/files', {
-        headers: { Authorization: token || '' }
+        headers: { Authorization: getToken() }
       });
       const data = await res.json();
       if (data.success) setFiles(data.files);
@@ -47,7 +49,7 @@ export default function AdminMultiModal() {
   const fetchStats = async () => {
     try {
       const res = await fetch('http://localhost:8000/api/admin/multimodal/stats', {
-        headers: { Authorization: token || '' }
+        headers: { Authorization: getToken() }
       });
       const data = await res.json();
       setStats(data);
@@ -57,11 +59,9 @@ export default function AdminMultiModal() {
   };
 
   useEffect(() => {
-    if (token) {
-      fetchFiles();
-      fetchStats();
-    }
-  }, [token]);
+    fetchFiles();
+    fetchStats();
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +72,7 @@ export default function AdminMultiModal() {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          Authorization: token || '' 
+          Authorization: getToken() 
         },
         body: JSON.stringify({ query: searchQuery })
       });
@@ -97,7 +97,7 @@ export default function AdminMultiModal() {
     try {
       const res = await fetch('http://localhost:8000/api/admin/multimodal/upload', {
         method: 'POST',
-        headers: { Authorization: token || '' },
+        headers: { Authorization: getToken() },
         body: formData
       });
       const data = await res.json();

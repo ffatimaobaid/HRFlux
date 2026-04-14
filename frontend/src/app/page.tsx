@@ -7,19 +7,8 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem('hrflux_token');
-    const userString = localStorage.getItem('hrflux_user');
-
-    if (!token) {
-      router.replace('/login');
-    } else {
-      // Basic check for admin vs employee
-      if (userString === 'ADMIN') {
-        router.replace('/admin');
-      } else {
-        router.replace('/dashboard');
-      }
-    }
+    // Force redirect to login page as the entry point
+    router.replace('/login');
   }, [router]);
 
   return (

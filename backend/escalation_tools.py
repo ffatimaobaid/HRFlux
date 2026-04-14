@@ -7,6 +7,8 @@ from typing import Optional
 from langchain_core.tools import tool
 
 from db_schema_v2 import DB_PATH
+from db import get_recent_history
+from summarizer import generate_escalation_summary
 
 logger = logging.getLogger(__name__)
 
@@ -60,21 +62,28 @@ def tool_file_escalation(
             f"Details: {incident_description}"
         )
         
+        # 1. Fetch recent history for summarization
+        history_tuples = get_recent_history(username, limit=5)
+        
+        # 2. Generate AI Context Summary
+        summary = generate_escalation_summary(username, incident_description, history_tuples)
+        
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         
-        # Store in chat_escalations — the correct table for employee-filed complaints
+        # 3. Store in chat_escalations
         c.execute("""
             INSERT INTO chat_escalations 
-            (employee_id, username, query, full_history, reason, sensitivity_score, status)
-            VALUES (?, ?, ?, ?, ?, ?, 'pending')
+            (employee_id, username, query, full_history, reason, sensitivity_score, status, conversation_summary)
+            VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
         """, (
             employee_id,
             username,
             incident_description,          # The core incident text
-            full_description,              # Full structured breakdown stored as history
+            full_description,              # Full structured breakdown
             f"[{ticket_id}] {category} - {urgency_level.upper()} urgency. Assigned to: {officer}",
-            1.0 if urgency_level.upper() in ("HIGH", "CRITICAL") else 0.5
+            1.0 if urgency_level.upper() in ("HIGH", "CRITICAL") else 0.5,
+            summary
         ))
         
         db_id = c.lastrowid

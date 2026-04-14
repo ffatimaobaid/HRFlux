@@ -4,10 +4,13 @@ Handles leave request approvals, balance validation, and escalations
 """
 
 import sqlite3
+import logging
 from datetime import datetime, timedelta
 from db_schema_v2 import get_employee, get_leave_balance, update_leave_balance
 from notifications import NotificationManager
 from guardrails import ContentFilter, InputValidator, SecurityLogger
+
+logger = logging.getLogger(__name__)
 
 DB_PATH = "queries.db"
 
@@ -180,30 +183,38 @@ class LeaveWorkflowEngine:
             conn.commit()
             
             # Auto-route to manager if exists
-            if manager_id:
-                message = f"Leave request submitted successfully (ID: {request_id}). Pending approval from manager."
-                # Notify Manager
-                NotificationManager.create_notification(
-                    user_id=manager_id,
-                    n_type="info",
-                    title="New Leave Request",
-                    message=f"A new {leave_type} leave request has been submitted by {employee.get('full_name', 'an employee')}.",
-                    action_id="view_pending_leaves"
-                )
-            else:
-                message = f"Leave request submitted successfully (ID: {request_id}). Pending HR approval."
-                # Notify HR Role
-                NotificationManager.create_notification(
-                    user_id="HR_MANAGER",
-                    n_type="info",
-                    title="New Leave Request",
-                    message=f"A new {leave_type} leave request for {employee.get('full_name', 'an employee')} needs approval.",
-                    action_id="view_pending_leaves"
-                )
-            
+            try:
+                if manager_id:
+                    message_text = f"Leave request submitted successfully (ID: {request_id}). Pending approval from manager."
+                    # Notify Manager
+                    NotificationManager.create_notification(
+                        user_id=manager_id,
+                        n_type="info",
+                        title="New Leave Request",
+                        message=f"A new {leave_type} leave request has been submitted by {employee.get('full_name', 'an employee')}.",
+                        action_id="view_pending_leaves"
+                    )
+                else:
+                    message_text = f"Leave request submitted successfully (ID: {request_id}). Pending HR approval."
+                    # Notify HR Role
+                    NotificationManager.create_notification(
+                        user_id="HR_MANAGER",
+                        n_type="info",
+                        title="New Leave Request",
+                        message=f"A new {leave_type} leave request for {employee.get('full_name', 'an employee')} needs approval.",
+                        action_id="view_pending_leaves"
+                    )
+            except Exception as notif_e:
+                logger.warning(f"Failed to send submission notification: {notif_e}")
+                # We still consider the submission a success even if the notification fails
+                if manager_id:
+                    message_text = f"Leave request submitted successfully (ID: {request_id}). Manager notification pending."
+                else:
+                    message_text = f"Leave request submitted successfully (ID: {request_id}). HR notification pending."
+
             return {
                 'success': True,
-                'message': message,
+                'message': message_text,
                 'request_id': request_id
             }
             
@@ -505,7 +516,7 @@ class LeaveWorkflowEngine:
         
         # 2. Fetch Chat Escalations (Sensitive/Unresolved Queries)
         c.execute("""
-            SELECT id, username, query, reason, status, created_at, employee_id
+            SELECT id, username, query, reason, status, created_at, employee_id, conversation_summary
             FROM chat_escalations
             WHERE status = 'pending'
             ORDER BY created_at DESC
@@ -526,7 +537,8 @@ class LeaveWorkflowEngine:
                 "employee_id": r[5],
                 "description": f"STALE REQUEST: {r[2]}",
                 "status": r[3],
-                "created_at": r[4]
+                "created_at": r[4],
+                "conversation_summary": None # Workflows have no conversation context yet
             })
             
         # Format Chat Escalations
@@ -540,7 +552,8 @@ class LeaveWorkflowEngine:
                 "description": f"SENSITIVE QUERY: {r[3]}",
                 "query": r[2],
                 "status": r[4],
-                "created_at": r[5]
+                "created_at": r[5],
+                "conversation_summary": r[7]
             })
             
         # Sort by date
@@ -571,7 +584,7 @@ class ChatEscalationEngine:
     """
     
     @staticmethod
-    def submit_chat_escalation(username, query, full_history, reason, sensitivity_score=0.0):
+    def submit_chat_escalation(username, query, full_history, reason, sensitivity_score=0.0, conversation_summary=None):
         """
         Escalate a chat query to HR.
         """
@@ -598,9 +611,9 @@ class ChatEscalationEngine:
 
             c.execute("""
                 INSERT INTO chat_escalations 
-                (employee_id, username, query, full_history, reason, sensitivity_score, status)
-                VALUES (?, ?, ?, ?, ?, ?, 'pending')
-            """, (employee_id, username, query, history_str, reason, sensitivity_score))
+                (employee_id, username, query, full_history, reason, sensitivity_score, status, conversation_summary)
+                VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
+            """, (employee_id, username, query, history_str, reason, sensitivity_score, conversation_summary))
             
             escalation_id = c.lastrowid
             conn.commit()
@@ -634,7 +647,7 @@ class ChatEscalationEngine:
         
         escalations = []
         columns = ['id', 'employee_id', 'username', 'query', 'full_history', 'reason', 
-                  'sensitivity_score', 'status', 'created_at', 'resolved_at', 'resolution_notes']
+                  'sensitivity_score', 'status', 'conversation_summary', 'created_at', 'resolved_at', 'resolution_notes']
         
         for row in rows:
             escalations.append(dict(zip(columns, row)))

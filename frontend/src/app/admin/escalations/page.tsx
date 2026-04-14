@@ -3,19 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/AdminSidebar';
 import { adminApi } from '@/lib/api';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
-  AlertTriangle, 
-  MessageSquare, 
-  Clock, 
-  User, 
+  AlertCircle,
   CheckCircle2, 
-  XSquare,
-  ShieldAlert,
-  ChevronRight,
-  Info
+  Bot,
+  ArrowUpRight
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { Table, Tag, Button, Modal, Input as AntInput, message } from 'antd';
 
 interface Escalation {
   id: string;
@@ -27,17 +22,20 @@ interface Escalation {
   query?: string;
   status: string;
   created_at: string;
-  sensitivity_score?: number;
+  conversation_summary?: string;
   full_history?: string;
-  username?: string; // for compatibility with chat fields
 }
 
 export default function EscalationsPage() {
   const [allEscalations, setAllEscalations] = useState<Escalation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'chat' | 'workflow'>('chat');
-  const [resolutionNote, setResolutionNote] = useState('');
+  const [activeTab, setActiveTab] = useState<'all' | 'workflow' | 'chat'>('all');
+  
+  // Resolution state
+  const [isEscModalOpen, setIsEscModalOpen] = useState(false);
   const [selectedEsc, setSelectedEsc] = useState<Escalation | null>(null);
+  const [resolutionNote, setResolutionNote] = useState('');
+  const [isResolving, setIsResolving] = useState(false);
 
   useEffect(() => {
     loadEscalations();
@@ -46,39 +44,144 @@ export default function EscalationsPage() {
   const loadEscalations = async () => {
     setLoading(true);
     try {
-      // Use the unified active-escalations endpoint
       const res = await adminApi.getActiveEscalations();
-      // Ensure we map fields consistently for the UI
-      const mapped = res.data.map((e: any) => ({
-        ...e,
-        username: e.source // UI uses 'username' in some places
-      }));
-      setAllEscalations(mapped);
+      setAllEscalations(res.data);
     } catch (err) {
-      console.error('Failed to load escalations', err);
+      message.error('Failed to load escalations');
     } finally {
       setLoading(false);
     }
   };
 
-  const resolveEscalation = async (id: string, db_id: number, type: 'chat' | 'workflow') => {
-    if (!resolutionNote) return alert('Please enter a resolution note.');
+  const handleEscalationResolve = async () => {
+    if (!selectedEsc || !resolutionNote) {
+      message.error("Please provide resolution notes");
+      return;
+    }
+    setIsResolving(true);
     try {
-      if (type === 'chat') {
-        await adminApi.resolveChatEscalation(db_id, resolutionNote);
+      if (selectedEsc.type === 'chat') {
+        await adminApi.resolveChatEscalation(selectedEsc.db_id, resolutionNote);
       } else {
-        await adminApi.resolveWorkflowEscalation(db_id, resolutionNote);
+        await adminApi.resolveWorkflowEscalation(selectedEsc.db_id, resolutionNote);
       }
+      message.success("Escalation resolved successfully");
+      setIsEscModalOpen(false);
       setResolutionNote('');
-      setSelectedEsc(null);
       loadEscalations();
     } catch (err) {
-      alert('Failed to resolve escalation');
+      message.error("Failed to resolve escalation");
+    } finally {
+      setIsResolving(false);
     }
   };
 
-  // Filter based on tab
-  const filteredEscalations = allEscalations.filter(e => e.type === activeTab);
+  const parseEscalationDetails = (esc: Escalation) => {
+    const desc = esc.description;
+    
+    if (esc.type === 'workflow') {
+      return {
+        ticketId: esc.id,
+        category: 'WORKFLOW',
+        urgency: 'MEDIUM',
+        assignedTo: 'HR Manager',
+        cleanDesc: desc.replace('STALE REQUEST: ', '')
+      };
+    }
+
+    const idMatch = desc.match(/\[(HRF-.*?)\]/);
+    const categoryMatch = desc.match(/\] (.*?) -/);
+    const urgencyMatch = desc.match(/- (.*?) urgency/);
+    const assignedMatch = desc.match(/Assigned to: (.*)/);
+
+    return {
+      ticketId: idMatch ? idMatch[1] : esc.id,
+      category: categoryMatch ? categoryMatch[1].trim() : 'GENERAL',
+      urgency: urgencyMatch ? urgencyMatch[1].trim() : 'MEDIUM',
+      assignedTo: assignedMatch ? assignedMatch[1].trim() : 'HR Officer',
+      cleanDesc: esc.query || desc
+    };
+  };
+
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency.toUpperCase()) {
+      case 'CRITICAL': return '#ff4d4f';
+      case 'HIGH': return '#fa8c16';
+      case 'MEDIUM': return '#7b2ff7';
+      default: return '#52c41a';
+    }
+  };
+
+  const getCategoryColor = (category: string) => {
+    switch (category.toUpperCase()) {
+      case 'PAYROLL_ISSUE': return 'gold';
+      case 'HARASSMENT': return 'red';
+      case 'COMPLAINT': return 'magenta';
+      case 'TECHNICAL': return 'blue';
+      case 'POLICY_DISPUTE': return 'cyan';
+      default: return 'purple';
+    }
+  };
+
+  const escalationColumns = [
+    {
+      title: 'Ticket ID',
+      key: 'id',
+      render: (_: any, esc: Escalation) => {
+        const details = parseEscalationDetails(esc);
+        return <span className="font-black text-gray-900 font-mono text-[13px]">{details.ticketId}</span>;
+      }
+    },
+    {
+      title: 'Type',
+      key: 'category',
+      render: (_: any, esc: Escalation) => {
+        const details = parseEscalationDetails(esc);
+        return <Tag color={getCategoryColor(details.category)} className="font-bold border-none px-3 py-0.5 rounded-lg text-[11px]">{details.category.replace('_', ' ')}</Tag>;
+      }
+    },
+    {
+      title: 'Employee',
+      dataIndex: 'source',
+      key: 'source',
+      render: (text: string) => <span className="font-bold text-gray-700 text-[13px]">{text}</span>
+    },
+    {
+      title: 'Urgency',
+      key: 'urgency',
+      render: (_: any, esc: Escalation) => {
+        const details = parseEscalationDetails(esc);
+        return (
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full animate-pulse`} style={{ backgroundColor: getUrgencyColor(details.urgency) }} />
+            <span className="text-[12px] font-black uppercase tracking-tighter" style={{ color: getUrgencyColor(details.urgency) }}>{details.urgency}</span>
+          </div>
+        );
+      }
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      render: (_: any, esc: Escalation) => (
+        <Button 
+          type="primary" 
+          size="middle" 
+          ghost 
+          className="border-[#7b2ff7] text-[#7b2ff7] hover:bg-[#7b2ff7] hover:text-white rounded-xl font-bold text-[11px]"
+          onClick={() => {
+            setSelectedEsc(esc);
+            setIsEscModalOpen(true);
+          }}
+        >
+          RESOLVE TICKET
+        </Button>
+      )
+    }
+  ];
+
+  const filteredEscalations = activeTab === 'all' 
+    ? allEscalations 
+    : allEscalations.filter(e => e.type === activeTab);
 
   return (
     <div className="flex h-screen bg-[#f8f9ff]">
@@ -88,174 +191,134 @@ export default function EscalationsPage() {
         <header className="mb-10 flex items-center justify-between">
            <div>
               <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">🚨 Escalation Management</h1>
-              <p className="text-gray-500 font-medium mt-1">Review and resolve critical system alerts and sensitive queries.</p>
+              <p className="text-gray-500 font-medium mt-1">Enterprise overview of critical system alerts and sensitive queries.</p>
            </div>
            <div className="flex bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100">
               <button 
+                onClick={() => setActiveTab('all')}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'all' ? 'bg-[#7b2ff7] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+              >
+                All Tickets
+              </button>
+              <button 
                 onClick={() => setActiveTab('workflow')}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'workflow' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'workflow' ? 'bg-[#7b2ff7] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
               >
                 📜 Workflow
               </button>
               <button 
                 onClick={() => setActiveTab('chat')}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'chat' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'chat' ? 'bg-[#7b2ff7] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
               >
                 💬 Sensitive Queries
               </button>
            </div>
         </header>
 
-        <div className="flex-1 flex gap-8 min-h-0">
-           {/* Alerts List */}
-           <section className="flex-1 bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col">
-              <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-                 <AnimatePresence mode="popLayout">
-                    {loading ? (
-                       <div className="h-full flex items-center justify-center text-gray-300">
-                          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2 }}>
-                             <ShieldAlert size={48} />
-                          </motion.div>
-                       </div>
-                    ) : filteredEscalations.length === 0 ? (
-                       <div className="h-full flex flex-col items-center justify-center opacity-30 text-center py-20">
-                          <CheckCircle2 size={64} className="text-green-500 mb-4" />
-                          <p className="font-bold text-gray-900">NO PENDING ISSUES</p>
-                          <p className="text-xs text-gray-500 max-w-[200px] mt-2">All system escalations have been resolved.</p>
-                       </div>
-                    ) : (
-                       filteredEscalations.map((esc) => (
-                          <motion.div
-                            key={esc.id}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            onClick={() => setSelectedEsc(esc)}
-                            className={`p-5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group ${
-                              selectedEsc?.id === esc.id 
-                                ? 'bg-red-50 border-red-200' 
-                                : 'bg-gray-50 border-gray-100 hover:border-indigo-200 hover:bg-white hover:shadow-xl hover:shadow-indigo-900/5'
-                            }`}
-                          >
-                             <div className="flex items-center gap-4">
-                                <div className={`p-3 rounded-xl transition-all ${
-                                   selectedEsc?.id === esc.id ? 'bg-red-500 text-white shadow-lg shadow-red-200' : 'bg-white text-orange-500 shadow-sm'
-                                }`}>
-                                   <AlertTriangle size={20} />
-                                </div>
-                                <div>
-                                   <h4 className="font-bold text-sm text-gray-900">{esc.description}</h4>
-                                   <div className="flex gap-3 mt-1">
-                                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight flex items-center gap-1">
-                                         <User size={10} /> {esc.username}
-                                      </span>
-                                      <span className="text-[10px] font-bold text-red-400 uppercase tracking-tight flex items-center gap-1">
-                                         <Clock size={10} /> {format(new Date(esc.created_at), 'MM-dd HH:mm')}
-                                      </span>
-                                   </div>
-                                </div>
-                             </div>
-                             <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                                selectedEsc?.id === esc.id ? 'bg-red-500 text-white' : 'bg-white border border-gray-100 text-gray-300'
-                             }`}>
-                                <ChevronRight size={16} />
-                             </div>
-                          </motion.div>
-                       ))
-                    )}
-                 </AnimatePresence>
+        <section className="flex-1 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 blur-[80px] rounded-full pointer-events-none" />
+          
+          <div className="p-8 flex-1 overflow-auto custom-scrollbar relative z-10">
+            {loading ? (
+              <div className="h-full flex items-center justify-center">
+                 <div className="w-8 h-8 border-4 border-[#7b2ff7] border-t-transparent rounded-full animate-spin" />
               </div>
-           </section>
-
-           {/* Resolution Inspector */}
-           <aside className="w-[450px] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
-              <AnimatePresence mode="wait">
-                 {selectedEsc ? (
-                    <motion.div
-                       key={selectedEsc.id}
-                       initial={{ opacity: 0, scale: 0.98 }}
-                       animate={{ opacity: 1, scale: 1 }}
-                       exit={{ opacity: 0, scale: 0.95 }}
-                       className="flex-1 flex flex-col"
-                    >
-                       {/* Header */}
-                       <div className="p-8 bg-gray-900 text-white">
-                          <div className="flex items-center justify-between mb-6">
-                             <div className="bg-red-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none">
-                                {selectedEsc.type === 'chat' ? 'SENSITIVE AI' : 'STALE FLOW'}
-                             </div>
-                             <span className="text-xs font-black text-gray-500">
-                                {selectedEsc.type === 'chat' ? `SCORE: ${selectedEsc.sensitivity_score?.toFixed(2)}` : 'PRIORITY: HIGH'}
-                             </span>
+            ) : filteredEscalations.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center opacity-60">
+                <CheckCircle2 size={48} className="text-green-500 mb-4" />
+                <p className="font-bold text-gray-900 text-lg">ALL CLEAR</p>
+                <p className="text-sm text-gray-500 mt-2 tracking-widest uppercase font-black">No active escalations</p>
+              </div>
+            ) : (
+              <Table 
+                dataSource={filteredEscalations} 
+                columns={escalationColumns}
+                pagination={false}
+                rowKey="id"
+                className="custom-admin-table w-full"
+                expandable={{
+                  expandedRowRender: (record) => (
+                    <div className="p-6 bg-[#7b2ff7]/5 rounded-2xl border border-[#7b2ff7]/10 mb-4 ml-8 mr-4 relative overflow-hidden">
+                      <div className="absolute -left-10 -top-10 w-32 h-32 bg-[#7b2ff7]/10 blur-2xl rounded-full pointer-events-none" />
+                      <p className="text-[10px] font-black text-[#7b2ff7] uppercase tracking-widest mb-3 flex items-center gap-2 relative z-10">
+                        <Bot size={14} /> AI CONVERSATION OVERVIEW
+                      </p>
+                      
+                      <div className="bg-white p-5 rounded-xl border border-[#7b2ff7]/10 shadow-sm relative z-10">
+                        <p className="text-[13px] text-gray-800 leading-relaxed font-medium">
+                          {record.conversation_summary || record.description}
+                        </p>
+                        
+                        {record.query && (
+                          <div className="mt-4 pt-4 border-t border-gray-50">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Triggering Query</p>
+                            <p className="text-[12px] text-gray-600 italic">"{record.query}"</p>
                           </div>
-                          <h3 className="text-xl font-bold mb-2">{selectedEsc.description}</h3>
-                          <p className="text-xs text-gray-400 font-medium">Issue reported at {format(new Date(selectedEsc.created_at), 'MMM dd, HH:mm')}</p>
-                       </div>
-
-                       {/* Content */}
-                       <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
-                          {selectedEsc.type === 'chat' && (
-                             <div>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">User Query</p>
-                                <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-sm font-bold text-red-900 italic">
-                                   "{selectedEsc.query}"
-                                </div>
+                        )}
+                        
+                        {record.full_history && !record.conversation_summary && (
+                          <div className="mt-4 pt-4 border-t border-gray-50">
+                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Raw Context</p>
+                             <div className="bg-gray-50 p-3 rounded-lg text-[10px] text-gray-500 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                               {record.full_history}
                              </div>
-                          )}
-
-                          {selectedEsc.type === 'chat' && (
-                             <div>
-                                <div className="flex items-center justify-between mb-3">
-                                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Conversation Context</p>
-                                   <MessageSquare size={14} className="text-gray-300" />
-                                </div>
-                                <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 text-xs font-medium text-gray-600 leading-relaxed whitespace-pre-wrap max-h-[250px] overflow-y-auto custom-scrollbar">
-                                   {selectedEsc.full_history}
-                                </div>
-                             </div>
-                          )}
-
-                          <div className="pt-4 border-t border-gray-100">
-                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block">Resolution Notes</label>
-                             <textarea 
-                                value={resolutionNote}
-                                onChange={(e) => setResolutionNote(e.target.value)}
-                                placeholder="State actions taken or system update notes..."
-                                className="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-red-400 transition-all text-sm font-medium min-h-[120px]"
-                             />
                           </div>
-                       </div>
-
-                       {/* Action */}
-                       <div className="p-8 pt-4 flex gap-4">
-                          <button 
-                            onClick={() => setSelectedEsc(null)}
-                            className="flex-1 p-4 bg-gray-100 text-gray-600 font-bold rounded-2xl hover:bg-gray-200 transition-all"
-                          >
-                             Back
-                          </button>
-                          <button 
-                             onClick={() => resolveEscalation(selectedEsc.id, selectedEsc.db_id, selectedEsc.type)}
-                             className="flex-[2] p-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
-                           >
-                             <CheckCircle2 size={18} /> Resolve Issue
-                          </button>
-                       </div>
-                    </motion.div>
-                 ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-20">
-                       <ShieldAlert size={64} className="mb-6" />
-                       <h3 className="text-xl font-bold">No Escalation Selected</h3>
-                       <p className="text-sm mt-2">Pick an alert from the list to view full context and sensitivity analysis.</p>
-                       <div className="mt-8 flex gap-2">
-                          <div className="w-2 h-2 rounded-full bg-gray-400" />
-                          <div className="w-2 h-2 rounded-full bg-gray-400" />
-                          <div className="w-2 h-2 rounded-full bg-gray-400" />
-                       </div>
+                        )}
+                      </div>
+                      
+                      <div className="mt-4 flex justify-end relative z-10">
+                        <span className="text-[10px] text-gray-500 font-black bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 tracking-wider">
+                          ASSIGNED TO: {parseEscalationDetails(record).assignedTo.toUpperCase()}
+                        </span>
+                      </div>
                     </div>
-                 )}
-              </AnimatePresence>
-           </aside>
-        </div>
+                  ),
+                  rowExpandable: (record) => true,
+                }}
+              />
+            )}
+          </div>
+        </section>
+
+        {/* Escalation Resolution Modal */}
+        <Modal
+          title={<div className="flex items-center gap-2 text-xl font-black italic uppercase tracking-tight text-gray-900"><AlertCircle className="text-red-500" /> Resolve Ticket</div>}
+          open={isEscModalOpen}
+          onCancel={() => setIsEscModalOpen(false)}
+          onOk={handleEscalationResolve}
+          confirmLoading={isResolving}
+          okText="Mark as Resolved"
+          okButtonProps={{ className: 'bg-[#7b2ff7] rounded-xl font-bold h-10' }}
+          cancelButtonProps={{ className: 'rounded-xl font-bold h-10' }}
+          centered
+          width={500}
+        >
+          <div className="py-4 space-y-4">
+            {selectedEsc && (
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Ticket being Resolved</p>
+                <div className="flex items-center justify-between">
+                   <p className="font-bold text-gray-900 text-lg">{parseEscalationDetails(selectedEsc).ticketId}</p>
+                   <Tag color={getCategoryColor(parseEscalationDetails(selectedEsc).category)} className="font-bold border-none">
+                     {parseEscalationDetails(selectedEsc).category}
+                   </Tag>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Submitted by: <span className="font-bold">{selectedEsc.source}</span></p>
+              </div>
+            )}
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Resolution Remarks</p>
+              <AntInput.TextArea 
+                placeholder="How was this issue resolved? (e.g. Discussed with payroll team, grievance addressed)"
+                rows={4} 
+                value={resolutionNote}
+                onChange={(e) => setResolutionNote(e.target.value)}
+                className="rounded-xl p-3"
+              />
+              <p className="text-[10px] text-gray-400 mt-2 italic">These remarks will be permanently stored in the employee's escalation history.</p>
+            </div>
+          </div>
+        </Modal>
       </main>
     </div>
   );

@@ -173,6 +173,10 @@ class ChatRequest(BaseModel):
     model: Optional[str] = "models/gemini-1.5-flash"
 
 
+class ResolutionRequest(BaseModel):
+    note: str
+
+
 class ChatResponse(BaseModel):
     answer: str
     suggestions: List[str]
@@ -201,17 +205,23 @@ class ConfigUpdate(BaseModel):
     model: str
 
 
+class AnnouncementCreate(BaseModel):
+    title: str
+    content: str
+    priority: Optional[str] = "medium" # low, medium, high
+
+
 # ========== Authentication (Simple Bearer Token) ==========
 
 def verify_token(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
-    """Verify session token via AuthManager."""
+    """Verify session token simply and robustly."""
     if credentials is None:
         return "test_token"
     
     token = credentials.credentials
     success, session_data = auth_manager.validate_session(token)
     
-    if not success:
+    if not success or not session_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired session"
@@ -219,12 +229,19 @@ def verify_token(credentials: Optional[HTTPAuthorizationCredentials] = Depends(s
     return token
 
 def verify_admin_token(token: str = Depends(verify_token)):
-    """Strictly verify that the session belongs to an ADMIN."""
+    """Simple and reliable admin check: strictly for ADMIN username (case-insensitive)."""
     success, session_data = auth_manager.validate_session(token)
-    if not success or session_data["user_data"].get("username") != "ADMIN":
+    
+    if not success or not session_data:
+        raise HTTPException(status_code=401, detail="Session expired")
+        
+    username = str(session_data.get("user_id", "")).upper()
+    
+    # Simple, strict separation: Only 'ADMIN' gets in
+    if username != "ADMIN":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Administrative privileges required"
+            detail="Administrative access required. Redirecting to employee portal."
         )
     return token
 
@@ -503,8 +520,9 @@ async def login(request: Request, login_data: LoginRequest):
         )
         return {
             "token": token, 
-            "username": login_data.username, 
+            "username": user_record.get('username'), 
             "employee_id": user_record.get('employee_id'),
+            "role": "admin" if str(user_record.get('username', '')).upper() == "ADMIN" else "employee",
             "success": True
         }
     else:
@@ -533,8 +551,12 @@ async def get_me(token: str = Depends(verify_token)):
     success, session_data = auth_manager.validate_session(token)
     if not success:
         # Fallback for testing if verify_token allowed a test token
-        return {"username": "test_user", "employee_id": "EMP001"}
-    return session_data["user_data"]
+        return {"username": "test_user", "employee_id": "EMP001", "role": "employee"}
+    
+    user_data = session_data["user_data"].copy()
+    username = str(user_data.get("username", "")).upper()
+    user_data["role"] = "admin" if username == "ADMIN" else "employee"
+    return user_data
 
 
 
@@ -585,6 +607,20 @@ async def clear_chat_history(user_id: str, token: str = Depends(verify_token)):
     """Clear chat history for a user."""
     delete_user_history(user_id)
     return {"message": "Chat history cleared"}
+
+
+@app.get("/api/announcements")
+async def get_announcements(token: str = Depends(verify_token)):
+    """Get the latest company announcements."""
+    conn = sqlite3.connect("queries.db")
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    try:
+        c.execute("SELECT * FROM announcements ORDER BY created_at DESC LIMIT 10")
+        rows = c.fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
 
 
 # ========== Task / Calendar Endpoints ==========
@@ -659,6 +695,26 @@ async def get_all_pending_leaves(token: str = Depends(verify_admin_token)):
 async def get_active_escalations(token: str = Depends(verify_admin_token)):
     """Get all pending escalations for admin review."""
     return LeaveWorkflowEngine.get_combined_active_escalations()
+
+
+@app.post("/api/admin/announcements")
+async def create_announcement(data: AnnouncementCreate, token: str = Depends(verify_admin_token)):
+    """Broadcast an announcement to all employees."""
+    conn = sqlite3.connect("queries.db")
+    c = conn.cursor()
+    try:
+        # Get admin ID from session
+        _, session_data = auth_manager.validate_session(token)
+        admin_id = session_data["user_data"].get("username") # We store username as user_id in logs
+
+        c.execute("""
+            INSERT INTO announcements (title, content, priority, created_by)
+            VALUES (?, ?, ?, ?)
+        """, (data.title, data.content, data.priority, admin_id))
+        conn.commit()
+        return {"message": "Announcement broadcasted successfully", "success": True}
+    finally:
+        conn.close()
 
 
 @app.get("/api/admin/logs")
@@ -742,16 +798,16 @@ async def list_chat_escalations(token: str = Depends(verify_admin_token)):
 
 
 @app.post("/api/admin/escalations/chat/{esc_id}/resolve")
-async def resolve_chat_escalation(esc_id: int, note: str, token: str = Depends(verify_admin_token)):
+async def resolve_chat_escalation(esc_id: int, request: ResolutionRequest, token: str = Depends(verify_admin_token)):
     """Mark a sensitive query alert as resolved."""
-    ChatEscalationEngine.resolve_escalation(esc_id, note)
+    ChatEscalationEngine.resolve_escalation(esc_id, request.note)
     return {"message": "Alert resolved"}
 
 
 @app.post("/api/admin/escalations/workflow/{esc_id}/resolve")
-async def resolve_workflow_escalation(esc_id: int, note: str, token: str = Depends(verify_admin_token)):
+async def resolve_workflow_escalation(esc_id: int, request: ResolutionRequest, token: str = Depends(verify_admin_token)):
     """Mark a workflow escalation as resolved."""
-    LeaveWorkflowEngine.resolve_escalation(esc_id, note)
+    LeaveWorkflowEngine.resolve_escalation(esc_id, request.note)
     return {"message": "Workflow escalation resolved"}
 
 

@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
           // Verify token with backend
           const res = await authApi.getMe();
-          const userRole = res.data.username === 'ADMIN' ? 'admin' : 'employee';
+          const userRole = res.data.role || 'employee';
           
           setUser({
             username: res.data.username,
@@ -52,6 +52,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
           // Set role cookie for middleware route protection
           document.cookie = `hrflux_role=${userRole}; path=/; max-age=86400; samesite=lax`;
+
+          // Proactive dynamic redirection - Ensure ADMIN stays on Admin Side
+          if (userRole === 'admin' && pathname === '/dashboard') {
+            router.push('/admin');
+          } else if (userRole === 'employee' && pathname.startsWith('/admin')) {
+            router.push('/dashboard');
+          }
 
         } catch (err) {
           console.error('Session expired', err);

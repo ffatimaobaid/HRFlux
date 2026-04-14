@@ -32,12 +32,20 @@ export default function LoginPage() {
         localStorage.setItem('hrflux_user', res.data.username);
         localStorage.setItem('hrflux_employee_id', res.data.employee_id);
         
-        // Check if admin or employee
-        if (res.data.username === 'ADMIN') {
-          router.push('/admin');
-        } else {
-          router.push('/dashboard');
-        }
+        const userRole = res.data.role || 'employee';
+        const isAdmin = userRole === 'admin';
+        
+        // Immediate cookie setting for middleware sync
+        document.cookie = `hrflux_role=${userRole}; path=/; max-age=86400; samesite=lax`;
+        
+        // Small delay to ensure cookie is processed by browser
+        setTimeout(() => {
+          if (isAdmin) {
+            router.push('/admin');
+          } else {
+            router.push('/dashboard');
+          }
+        }, 100);
       }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'An error occurred during authentication');

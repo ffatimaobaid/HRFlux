@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AdminSidebar from '@/components/AdminSidebar';
 import { adminApi, hrApi } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, 
@@ -18,7 +19,8 @@ import {
   Bot
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Button } from 'antd';
+import { Button, Modal, Input as AntInput, Select, message } from 'antd';
+import { Megaphone } from 'lucide-react';
 
 interface Stats {
   total_employees: number;
@@ -49,13 +51,37 @@ interface Escalation {
   query?: string;
   status: string;
   created_at: string;
+  conversation_summary?: string;
 }
 
 export default function AdminDashboard() {
+  const { user, loading: authLoading } = useAuth();
+  
+  // Strict lockdown: Never show admin dashboard to an employee
+  if (authLoading || (user && user.role !== 'admin')) {
+    return <div className="h-screen bg-[#f1f2f6] flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-[#7b2ff7] border-t-transparent rounded-full animate-spin" />
+    </div>;
+  }
+
   const [stats, setStats] = useState<Stats>({ total_employees: 0, pending_leaves: 0, active_escalations: 0 });
   const [pendingLeaves, setPendingLeaves] = useState<PendingLeave[]>([]);
   const [escalations, setEscalations] = useState<Escalation[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Announcement state
+  const [isAnnModalOpen, setIsAnnModalOpen] = useState(false);
+  const [annTitle, setAnnTitle] = useState('');
+  const [annContent, setAnnContent] = useState('');
+  const [annPriority, setAnnPriority] = useState('medium');
+  const [publishing, setPublishing] = useState(false);
+
+  // Leave processing state
+  const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
+  const [currentLeave, setCurrentLeave] = useState<PendingLeave | null>(null);
+  const [processAction, setProcessAction] = useState<'approve' | 'reject'>('approve');
+  const [processReason, setProcessReason] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -78,12 +104,54 @@ export default function AdminDashboard() {
     }
   };
 
-  const processLeave = async (id: number, action: 'approve' | 'reject') => {
+  const handleProcessClick = (leave: PendingLeave, action: 'approve' | 'reject') => {
+    setCurrentLeave(leave);
+    setProcessAction(action);
+    setProcessReason('');
+    setIsProcessModalOpen(true);
+  };
+
+  const submitProcessLeave = async () => {
+    if (!currentLeave) return;
+    if (!processReason.trim()) {
+      message.error("Please provide a reason/comment for this action");
+      return;
+    }
+
+    setIsProcessing(true);
     try {
-      await adminApi.processLeave(id, action, "Processed via Next.js Admin Portal");
+      await adminApi.processLeave(currentLeave.id, processAction, processReason);
+      message.success(`Leave request ${processAction}d successfully`);
+      setIsProcessModalOpen(false);
       loadData();
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.detail || `Failed to ${processAction} leave`;
+      message.error(errorMsg);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const publishAnnouncement = async () => {
+    if (!annTitle || !annContent) {
+      message.error("Please fill in both title and content");
+      return;
+    }
+    setPublishing(true);
+    try {
+      await adminApi.createAnnouncement({
+        title: annTitle,
+        content: annContent,
+        priority: annPriority
+      });
+      message.success("Announcement broadcasted successfully!");
+      setIsAnnModalOpen(false);
+      setAnnTitle('');
+      setAnnContent('');
     } catch (err) {
-      alert('Failed to process leave');
+      message.error("Failed to broadcast announcement");
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -104,11 +172,17 @@ export default function AdminDashboard() {
             <p className="text-gray-500 font-medium mt-1">Real-time overview of HR operations and system health.</p>
           </div>
           <div className="flex gap-3">
+             <Button 
+               type="primary" 
+               size="large" 
+               className="font-bold rounded-xl shadow-md bg-orange-500 hover:bg-orange-600 border-none" 
+               icon={<Megaphone size={16} />}
+               onClick={() => setIsAnnModalOpen(true)}
+             >
+               Broadcast
+             </Button>
              <Button size="large" className="font-bold rounded-xl" icon={<TrendingUp size={16} />}>
                Reports
-             </Button>
-             <Button type="primary" size="large" className="font-bold rounded-xl shadow-md" icon={<Briefcase size={16} />}>
-               Hire New
              </Button>
           </div>
         </header>
@@ -125,7 +199,7 @@ export default function AdminDashboard() {
             >
               <div className="flex items-start justify-between mb-6">
                 <div className={`p-4 rounded-2xl ${card.color}`}>
-                  {React.cloneElement(card.icon as React.ReactElement, { size: 28 })}
+                  {React.cloneElement(card.icon as React.ReactElement<any>, { size: 28 })}
                 </div>
                 <div className="p-2 bg-gray-50 rounded-lg group-hover:bg-[#f4effc] transition-colors">
                   <ArrowUpRight size={20} className="text-gray-400 group-hover:text-[#904df9]" />
@@ -185,13 +259,13 @@ export default function AdminDashboard() {
                        
                        <div className="flex items-center gap-2">
                           <button 
-                            onClick={() => processLeave(req.id, 'reject')}
+                            onClick={() => handleProcessClick(req, 'reject')}
                             className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
                           >
                              <XCircle size={22} />
                           </button>
                           <button 
-                            onClick={() => processLeave(req.id, 'approve')}
+                            onClick={() => handleProcessClick(req, 'approve')}
                             className="p-3 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-xl transition-all"
                           >
                              <CheckCircle2 size={22} />
@@ -273,16 +347,7 @@ export default function AdminDashboard() {
                            </div>
                            
                            <h4 className="text-sm font-bold text-gray-900 mb-1 group-hover:text-red-600 transition-colors">{esc.source}</h4>
-                           <p className="text-[12px] text-gray-600 line-clamp-2 leading-relaxed">{esc.description}</p>
-                           
-                           {esc.query && (
-                             <div className="mt-3 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
-                               <p className="text-[11px] text-gray-500 italic flex items-start gap-2">
-                                 <span className="text-gray-300 font-serif text-lg leading-none">"</span>
-                                 {esc.query}
-                               </p>
-                             </div>
-                           )}
+                           <p className="text-[12px] text-gray-600 line-clamp-2 leading-relaxed mb-4">{esc.description}</p>
                            
                            <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
                               <span className="text-[10px] text-gray-500 font-medium bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
@@ -292,16 +357,106 @@ export default function AdminDashboard() {
                                 href="/admin/escalations" 
                                 className="flex items-center gap-1 text-[11px] text-[#7b2ff7] bg-[#f4effc] px-3 py-1.5 rounded-lg font-bold group-hover:bg-[#7b2ff7] group-hover:text-white transition-all shadow-sm"
                               >
-                                Resolve <ArrowUpRight size={12} className="opacity-70" />
+                                View Details <ArrowUpRight size={12} className="opacity-70" />
                               </Link>
                            </div>
                         </motion.div>
                       ))
                     )}
-                 </div>
+                  </div>
              </div>
           </aside>
         </div>
+
+        {/* Leave Processing Modal */}
+        <Modal
+          title={<div className="flex items-center gap-2 text-xl font-black italic uppercase tracking-tight text-gray-900">
+            {processAction === 'approve' ? <CheckCircle2 className="text-green-500" /> : <XCircle className="text-red-500" />} 
+            {processAction} Leave Request
+          </div>}
+          open={isProcessModalOpen}
+          onCancel={() => setIsProcessModalOpen(false)}
+          onOk={submitProcessLeave}
+          confirmLoading={isProcessing}
+          okText={processAction === 'approve' ? "Confirm Approval" : "Confirm Rejection"}
+          okButtonProps={{ 
+            className: `rounded-xl font-bold h-10 ${processAction === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`,
+            danger: processAction === 'reject'
+          }}
+          cancelButtonProps={{ className: 'rounded-xl font-bold h-10' }}
+          centered
+          width={500}
+        >
+          <div className="py-4 space-y-4">
+            {currentLeave && (
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 mb-4">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Applying Employee</p>
+                <p className="font-bold text-gray-900">{currentLeave.full_name || currentLeave.employee_id}</p>
+                <p className="text-xs text-gray-500">{currentLeave.leave_type} ({currentLeave.total_days} days)</p>
+              </div>
+            )}
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Administrative Reason / Remarks</p>
+              <AntInput.TextArea 
+                placeholder={`Why are you ${processAction}ing this request?`}
+                rows={4} 
+                value={processReason}
+                onChange={(e) => setProcessReason(e.target.value)}
+                className="rounded-xl p-3"
+              />
+              <p className="text-[10px] text-gray-400 mt-2 italic">This comment will be visible in the system logs and leave records.</p>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Announcement Modal */}
+        <Modal
+          title={<div className="flex items-center gap-2 text-xl font-black italic uppercase tracking-tight text-gray-900"><Megaphone className="text-orange-500" /> New Broadcast</div>}
+          open={isAnnModalOpen}
+          onCancel={() => setIsAnnModalOpen(false)}
+          onOk={publishAnnouncement}
+          confirmLoading={publishing}
+          okText="Broadcast to All"
+          okButtonProps={{ className: 'bg-[#7b2ff7] rounded-xl font-bold h-10' }}
+          cancelButtonProps={{ className: 'rounded-xl font-bold h-10' }}
+          centered
+          width={600}
+        >
+          <div className="py-4 space-y-6">
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Headline</p>
+              <AntInput 
+                placeholder="What is the big news?" 
+                value={annTitle}
+                onChange={(e) => setAnnTitle(e.target.value)}
+                className="rounded-xl p-3 font-bold"
+              />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Announcement Details</p>
+              <AntInput.TextArea 
+                placeholder="Details of the announcement..." 
+                rows={4} 
+                value={annContent}
+                onChange={(e) => setAnnContent(e.target.value)}
+                className="rounded-xl p-3"
+              />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Priority Level</p>
+              <Select
+                defaultValue="medium"
+                className="w-full"
+                onChange={(val) => setAnnPriority(val)}
+                options={[
+                  { value: 'low', label: 'Low - Information Only' },
+                  { value: 'medium', label: 'Medium - Normal Update' },
+                  { value: 'high', label: 'High - Critical Action Required' },
+                ]}
+              />
+            </div>
+          </div>
+        </Modal>
       </main>
     </div>
   );
