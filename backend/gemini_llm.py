@@ -6,7 +6,7 @@ import os
 from embedder import model  # For embeddings
 import numpy as np
 import time
-import requests
+# import requests (No longer needed, using urllib for robustness)
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 # FAQ Questions for suggestions
@@ -55,14 +55,22 @@ def get_similar_questions(user_query, faq_questions=FAQ_QUESTIONS, top_n=3):
 
 def query_ollama(messages):
     """
-    Directly query Ollama API via requests (OpenAI-compatible).
-    Used as a tertiary fallback.
+    Directly query Ollama API via urllib (OpenAI-compatible / Native).
+    Used as a tertiary fallback. Robustly handles SSL and environment issues.
     """
-    from config import OLLAMA_API_KEY, OLLAMA_MODEL, OLLAMA_BASE_URL
+    import urllib.request
+    import urllib.error
+    import ssl
     import json
+    from config import OLLAMA_API_KEY, OLLAMA_MODEL, OLLAMA_BASE_URL
 
-    print(f"Attempting query via Ollama ({OLLAMA_MODEL})...")
+    print(f"🤖 Attempting query via Ollama ({OLLAMA_MODEL})...")
     
+    # Disable SSL verification for maximum compatibility with local/tunneled Ollama instances
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+
     headers = {
         "Authorization": f"Bearer {OLLAMA_API_KEY}",
         "Content-Type": "application/json"
@@ -76,60 +84,65 @@ def query_ollama(messages):
             role = "system" if m.type == "system" else "assistant" if m.type == "ai" else "user"
         formatted_messages.append({"role": role, "content": m.content})
     
+    # Normalize the base URL
+    base = OLLAMA_BASE_URL.rstrip('/')
+    if base.endswith('/api'):
+        base = base[:-4].rstrip('/')
+
+    # --- TRY OPENAI-COMPATIBLE ENDPOINT FIRST ---
+    openai_url = f"{base}/v1/chat/completions"
     payload = {
         "model": OLLAMA_MODEL,
         "messages": formatted_messages,
-        "temperature": 0.3
+        "temperature": 0.3,
+        "stream": False
     }
-    
+
     try:
-        # Try OpenAI-compatible endpoint first
-        response = requests.post(
-            f"{OLLAMA_BASE_URL}/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=60
-        )
-        
-        # If /v1/chat/completions fails with 404, try Ollama's native /api/chat
-        if response.status_code == 404:
-            print("🔄 /v1/chat/completions not found, trying native Ollama /api/chat...")
-            native_payload = {
-                "model": OLLAMA_MODEL,
-                "messages": formatted_messages,
-                "stream": False,
-                "options": {"temperature": 0.3}
-            }
-            response = requests.post(
-                f"{OLLAMA_BASE_URL}/api/chat",
-                headers=headers,
-                json=native_payload,
-                timeout=60
-            )
-            
-        response.raise_for_status()
-        result = response.json()
-        
-        if "choices" in result: # OpenAI format
-            return result["choices"][0]["message"]["content"].strip()
-        elif "message" in result: # Ollama format
-            return result["message"]["content"].strip()
-        else:
-            raise Exception(f"Unexpected Ollama response format: {result}")
-            
+        print(f"📡 HRFLUX Fallback: Sending query to Ollama OpenAI endpoint ({openai_url})...")
+        req = urllib.request.Request(openai_url, data=json.dumps(payload).encode(), headers=headers, method='POST')
+        with urllib.request.urlopen(req, context=ctx, timeout=180) as response:
+            result = json.loads(response.read().decode())
+            if "choices" in result:
+                return result["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        print(f"Ollama request failed: {e}")
+        print(f"⚠️ Ollama OpenAI endpoint failed: {e}. Trying native endpoint...")
+
+    # --- TRY NATIVE OLLAMA ENDPOINT AS SECONDARY ---
+    native_url = f"{base}/api/chat"
+    native_payload = {
+        "model": OLLAMA_MODEL,
+        "messages": formatted_messages,
+        "stream": False,
+        "options": {"temperature": 0.3}
+    }
+
+    try:
+        print(f"🔄 Trying native Ollama endpoint ({native_url})...")
+        req = urllib.request.Request(native_url, data=json.dumps(native_payload).encode(), headers=headers, method='POST')
+        with urllib.request.urlopen(req, context=ctx, timeout=180) as response:
+            result = json.loads(response.read().decode())
+            if "message" in result:
+                return result["message"]["content"].strip()
+            else:
+                raise Exception(f"Unexpected native Ollama response format: {result}")
+    except Exception as e:
+        print(f"❌ All Ollama endpoints failed: {e}")
         raise e
 
 def query_gemini_with_retry(context_chunks, question, model_name="gemini-2.0-flash", chat_history=None, hr_knowledge=None, max_retries=5):
     """
     Query LLM with Groq prioritization (key rotation built-in) and fallback to Gemini.
     """
-    # System prompt remains same
+    from prompts import SYSTEM_PROMPT
     system_prompt = f"""
-    You are HRFLUX AI assistant. 
-    Context: {context_chunks}
-    HR Knowledge: {hr_knowledge}
+    {SYSTEM_PROMPT}
+    
+    Current Database Context: 
+    {context_chunks}
+    
+    HR Knowledge & Procedures: 
+    {hr_knowledge}
     """
     
     messages = [
@@ -202,7 +215,7 @@ class ChatGoogleGenerativeAIWithRotation(ChatGoogleGenerativeAI):
             self.max_retries = 1
         return super().invoke(*args, **kwargs)
 
-def query_gemini(context_chunks, question, model_name="gemini-2.5-flash", chat_history=None, hr_knowledge=None):
+def query_gemini(context_chunks, question, model_name="gemini-2.0-flash", chat_history=None, hr_knowledge=None):
     """Wrapper for backward compatibility"""
     # Force use of config key if env is missing
     from config import GEMINI_API_KEY

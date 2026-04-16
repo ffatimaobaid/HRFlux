@@ -5,13 +5,13 @@ import Sidebar from '@/components/Sidebar';
 import { hrApi } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
-import { 
-  User, 
-  Mail, 
-  Briefcase, 
-  MapPin, 
-  Calendar, 
-  DollarSign, 
+import {
+  User,
+  Mail,
+  Briefcase,
+  MapPin,
+  Calendar,
+  DollarSign,
   ShieldCheck,
   Activity,
   Heart,
@@ -60,7 +60,7 @@ export default function ProfilePage() {
   return (
     <div className="flex h-screen bg-[#f8f9ff]">
       <Sidebar />
-      
+
       <main className="flex-1 flex flex-col overflow-y-auto p-8 custom-scrollbar">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">👤 My Profile</h1>
@@ -76,9 +76,9 @@ export default function ProfilePage() {
               </div>
               <h2 className="text-2xl font-bold text-gray-900">{employee?.full_name}</h2>
               <p className="text-indigo-600 font-bold text-sm tracking-widest uppercase mt-1">{employee?.designation}</p>
-              
+
               <div className="w-full h-px bg-gray-100 my-8" />
-              
+
               <div className="w-full space-y-4 text-left">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gray-50 rounded-xl text-gray-400">
@@ -151,7 +151,7 @@ export default function ProfilePage() {
                 <MapPin className="text-indigo-600" />
                 Employment Details
               </h3>
-              
+
               <div className="grid grid-cols-2 gap-y-10 gap-x-8">
                 <div className="space-y-1">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
@@ -159,7 +159,7 @@ export default function ProfilePage() {
                   </p>
                   <p className="text-lg font-bold text-gray-800">{employee?.joining_date}</p>
                 </div>
-                
+
                 <div className="space-y-1">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                     <ShieldCheck size={14} /> Employment Status
@@ -171,8 +171,8 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Reporting Manager ID</p>
-                  <p className="text-lg font-bold text-gray-800">{employee?.manager_id || 'Not Assigned'}</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Reporting Manager</p>
+                  <p className="text-lg font-bold text-gray-800">{employee?.manager_name || 'Not Assigned'}</p>
                 </div>
 
                 <div className="space-y-1">

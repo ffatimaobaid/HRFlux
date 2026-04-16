@@ -312,10 +312,10 @@ export default function Dashboard() {
   };
 
   const quickActions = [
-    { label: 'My leave balance', icon: <Calendar size={18} />, color: 'bg-blue-50 text-blue-600' },
-    { label: 'Apply for leave', icon: <ClipboardList size={18} />, color: 'bg-green-50 text-green-600' },
-    { label: 'Request a document', icon: <FileText size={18} />, color: 'bg-purple-50 text-purple-600' },
-    { label: 'Report an issue', icon: <AlertCircle size={18} />, color: 'bg-red-50 text-red-600' },
+    { label: 'My leave balance', icon: <Calendar size={16} />, color: 'bg-blue-50 text-blue-600' },
+    { label: 'Apply for leave', icon: <ClipboardList size={16} />, color: 'bg-green-50 text-green-600' },
+    { label: 'Request a document', icon: <FileText size={16} />, color: 'bg-purple-50 text-purple-600' },
+    { label: 'Report an issue', icon: <AlertCircle size={16} />, color: 'bg-red-50 text-red-600' },
   ];
 
   return (
@@ -460,19 +460,19 @@ export default function Dashboard() {
         {/* The proactive notifications and latest announcement section has been removed to keep the chat area clean. */}
 
         {/* Quick Actions */}
-        <div className="px-8 pt-6">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Quick Actions</p>
-          <div className="grid grid-cols-4 gap-4">
+        <div className="px-8 pt-2">
+          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Quick Actions</p>
+          <div className="grid grid-cols-4 gap-2">
             {quickActions.map((action) => (
               <motion.button
                 key={action.label}
-                whileHover={{ scale: 1.02, y: -2 }}
+                whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleSend(action.label)}
-                className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 hover:border-indigo-200 transition-all text-left group shadow-sm"
+                className="flex items-center gap-2 p-2 bg-white rounded-xl border border-gray-100 hover:border-indigo-200 transition-all text-left group shadow-sm"
               >
-                <div className={`p-2 rounded-xl ${action.color}`}>{action.icon}</div>
-                <span className="text-sm font-bold text-gray-700 group-hover:text-[#7b2ff7] transition-colors">
+                <div className={`p-1 rounded-lg ${action.color}`}>{action.icon}</div>
+                <span className="text-xs font-bold text-gray-700 group-hover:text-[#7b2ff7] transition-colors leading-tight">
                   {action.label}
                 </span>
               </motion.button>
@@ -481,8 +481,8 @@ export default function Dashboard() {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 overflow-hidden flex flex-col p-8 pb-4">
-          <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-6 pr-4 custom-scrollbar">
+        <div className="flex-1 overflow-hidden flex flex-col p-6 pt-2 pb-4">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pr-4 custom-scrollbar">
 
 
             {messages.length === 0 && (

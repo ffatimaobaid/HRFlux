@@ -97,17 +97,24 @@ def parse_meeting_time(time_str):
         
         time_str = time_str.strip().lower()
         
+        # Handle 24-hour range like "13:00-14:00"
+        if '-' in time_str:
+            time_parts = time_str.split('-')
+            start_part = time_parts[0].strip()
+            # We only parse the start part here, the end part can be handled if needed
+            time_str = start_part
+
         # Handle common formats
         if 'am' in time_str or 'pm' in time_str:
             # Parse 12-hour format
-            if ':' in time_str:
-                time_part = time_str.replace('am', '').replace('pm', '').strip()
+            time_part = time_str.replace('am', '').replace('pm', '').strip()
+            if ':' in time_part:
                 hour_min = time_part.split(':')
                 hour = int(hour_min[0])
                 minute = int(hour_min[1]) if len(hour_min) > 1 else 0
             else:
                 # Simple format like "2pm"
-                hour = int(time_str.replace('am', '').replace('pm', '').strip())
+                hour = int(time_part)
                 minute = 0
             
             if 'pm' in time_str and hour != 12:
@@ -121,13 +128,20 @@ def parse_meeting_time(time_str):
                 hour = int(hour_min[0])
                 minute = int(hour_min[1]) if len(hour_min) > 1 else 0
             else:
-                hour = int(time_str)
-                minute = 0
+                # Handle single numbers
+                try:
+                    hour = int(time_str)
+                    minute = 0
+                except ValueError:
+                    # Last resort, try fuzzy parse
+                    dt = date_parser.parse(time_str)
+                    hour = dt.hour
+                    minute = dt.minute
         
         # Default 1-hour meeting duration
         end_hour = hour + 1
         if end_hour >= 24:
-            end_hour -= 1  # Keep it within same day
+            end_hour = 23
         
         start_time = f"{hour:02d}:{minute:02d}"
         end_time = f"{end_hour:02d}:{minute:02d}"
@@ -194,30 +208,28 @@ def tool_schedule_meeting(username: str, event_title: str = "", event_type: str 
         JSON string with status and event details or prompts for missing information
     """
     try:
-        # Get employee info
-        employee = get_employee(username=username)
+        # Get employee info - support both ID and username
+        employee = get_employee(employee_id=username) or get_employee(username=username)
         if not employee:
             return json.dumps({
                 "status": "error",
                 "message": f"Employee '{username}' not found in the system."
             })
         
-        # If only username provided, return guidance on what's needed
-        if not event_title or not event_type or not event_date:
+        # If essential information is missing, ask for it clearly
+        if not event_title or not event_date or not start_time:
+            missing = []
+            if not event_title: missing.append("title")
+            if not event_date: missing.append("date")
+            if not start_time: missing.append("start time")
+            
             return json.dumps({
                 "status": "info",
-                "message": "To schedule an event, I need the following details:",
-                "required_fields": {
-                    "event_title": "What is the event title? (e.g., 'Project Review', 'Team Standup', 'Client Meeting')",
-                    "event_type": "What type of event? (choose one: 'meeting', 'task', 'deadline', 'event')",
-                    "event_date": "When should the event be scheduled? (e.g., 'tomorrow', 'next monday', '2024-12-15')",
-                    "start_time": "What time does it start? (e.g., '2:00 PM', '14:00')",
-                    "end_time": "What time does it end? (optional, defaults to 1 hour duration)",
-                    "participants": "Who should attend? (optional, comma-separated names)",
-                    "description": "What's the agenda/details? (optional)"
-                },
-                "example": "Please provide: 'Schedule a meeting titled 'Project Review' for tomorrow at 2:00 PM with John and Sarah to discuss Q4 targets'"
+                "message": f"I need more details to schedule this. Please provide the {', '.join(missing)}."
             })
+        
+        if not event_type:
+            event_type = "meeting"
         
         # Validate event type
         valid_types = ['meeting', 'task', 'deadline', 'event']

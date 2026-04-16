@@ -61,14 +61,37 @@ def _build_agent():
     return agent
 
 
-# Singleton agent instance
+# Singleton agent instances
 _admin_agent = None
+_admin_gemini_agent = None
 
 def _get_agent():
     global _admin_agent
     if _admin_agent is None:
         _admin_agent = _build_agent()
     return _admin_agent
+
+def _get_gemini_agent():
+    global _admin_gemini_agent
+    if _admin_gemini_agent is None:
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        from config import get_current_gemini_key, GEMINI_MODEL
+        from gemini_llm import ChatGoogleGenerativeAIWithRotation
+        
+        llm = ChatGoogleGenerativeAIWithRotation(
+            model=GEMINI_MODEL,
+            temperature=0.1,
+            google_api_key=get_current_gemini_key(),
+            max_tokens=4096
+        )
+        memory = MemorySaver()
+        _admin_gemini_agent = create_react_agent(
+            llm,
+            tools=admin_bot_tools,
+            checkpointer=memory,
+            prompt=ADMIN_SYSTEM_PROMPT,
+        )
+    return _admin_gemini_agent
 
 
 # ---------------------------------------------------------------------------
@@ -79,20 +102,42 @@ def invoke_admin_agent(query: str, thread_id: str = "admin_session") -> str:
     """
     Invoke the admin bot with a natural-language query.
     Returns the agent's response as a plain string.
-
-    Args:
-        query: Admin's question or command.
-        thread_id: Conversation thread ID for memory continuity (default: one shared admin session).
     """
+    config = {"configurable": {"thread_id": thread_id}}
+    input_messages = {"messages": [HumanMessage(content=query)]}
+    
     try:
+        # PRIMARY: Groq
         agent = _get_agent()
-        config = {"configurable": {"thread_id": thread_id}}
-        result = agent.invoke(
-            {"messages": [HumanMessage(content=query)]},
-            config=config,
-        )
-        last_message = result["messages"][-1]
-        return last_message.content or "I completed the action but have nothing further to add."
+        result = agent.invoke(input_messages, config=config)
+        return result["messages"][-1].content or "Action completed."
+        
     except Exception as e:
-        logger.error(f"AdminBot error: {e}", exc_info=True)
-        return f"⚠️ AdminBot encountered an error: {str(e)}"
+        logger.warning(f"Admin Groq Agent failed: {e}. Trying Gemini Fallback...")
+        
+        # SECONDARY: Gemini with rotation
+        try:
+            from config import rotate_gemini_key
+            gemini_agent = _get_gemini_agent()
+            
+            for attempt in range(2):  # Try with rotation
+                try:
+                    result = gemini_agent.invoke(input_messages, config=config)
+                    return result["messages"][-1].content or "Action completed via Gemini."
+                except Exception as gem_e:
+                    if ("quota" in str(gem_e).lower() or "429" in str(gem_e)) and attempt < 1:
+                        logger.warning("Admin Gemini quota hit, rotating key...")
+                        rotate_gemini_key()
+                        continue
+                    raise gem_e
+            
+        except Exception as gem_final_e:
+            logger.error(f"Admin Gemini Agent failed (all attempts): {gem_final_e}")
+            
+            # FINAL FALLBACK: Simple text query to Ollama or Gemini (No Tools)
+            try:
+                from gemini_llm import query_gemini
+                fallback_response = query_gemini([], f"ADMIN REQUEST: {query}\n(System note: Groq and Gemini Agent both failed. User is an ADMIN. Use your internal knowledge or suggest manual check.)")
+                return f"⚠️ (Partial Service) {fallback_response}"
+            except Exception as final_e:
+                return f"❌ All Admin AI services (Groq/Gemini/Ollama) are currently unavailable. Error: {str(e)}"

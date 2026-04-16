@@ -2,10 +2,13 @@ import os
 
 # Multiple Groq API keys for rotation
 GROQ_API_KEYS = [
-    "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", #api
+    "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", #shayane1296
+    "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", #shayane947
+    "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", #shayaneUni
+    "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",
     "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"
 ]
-
+ 
 # Current key index for rotation
 current_key_index = 0
 
@@ -183,7 +186,7 @@ def prioritize_all_keys():
 # Legacy compatibility
 GROQ_API_KEY = get_current_api_key()
 # Gemini API Key (Fallback)
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-2.0-flash"
 GEMINI_API_KEY = get_current_gemini_key()
 
 # RAG debug / traceability: show top source files under answers when True
@@ -192,4 +195,4 @@ SHOW_SOURCES = True
 # --- OLLAMA CLOUD CONFIGURATION ---
 OLLAMA_API_KEY = "562e9779746d42349683337d650a683f.ioKlEqIee834Qi-13tEHQXEU"
 OLLAMA_MODEL = "qwen3-vl:235b-cloud"
-OLLAMA_BASE_URL = "https://ollama.com/api"
+OLLAMA_BASE_URL = "https://ollama.com"

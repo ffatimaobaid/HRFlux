@@ -143,11 +143,11 @@ def get_employee_data(username: str) -> Dict[str, str]:
                 "City": "Tech City",
                 "State": "Technology State",
                 "Zip Code": "12345",
-                "Visa Purpose": "Business Conference Attendance",
-                "Destination Country": "United States",
-                "Travel Start Date": datetime.now().strftime("%B %d, %Y"),
-                "Travel End Date": (datetime.now() + timedelta(days=10)).strftime("%B %d, %Y"),
-                "Country": "United States"
+                "Visa Purpose": "[Visa Purpose]",
+                "Destination Country": "[Destination Country]",
+                "Travel Start Date": "[Travel Start Date]",
+                "Travel End Date": "[Travel End Date]",
+                "Country": "[Country]"
             }
         else:
             # Fallback to demo data if employee not found
@@ -169,11 +169,11 @@ def get_employee_data(username: str) -> Dict[str, str]:
                 "City": "Tech City",
                 "State": "Technology State",
                 "Zip Code": "12345",
-                "Visa Purpose": "Business Conference Attendance",
-                "Destination Country": "United States",
-                "Travel Start Date": datetime.now().strftime("%B %d, %Y"),
-                "Travel End Date": (datetime.now() + timedelta(days=10)).strftime("%B %d, %Y"),
-                "Country": "United States"
+                "Visa Purpose": "[Visa Purpose]",
+                "Destination Country": "[Destination Country]",
+                "Travel Start Date": "[Travel Start Date]",
+                "Travel End Date": "[Travel End Date]",
+                "Country": "[Country]"
             }
             
     except Exception as e:
@@ -197,11 +197,11 @@ def get_employee_data(username: str) -> Dict[str, str]:
             "City": "Tech City",
             "State": "Technology State",
             "Zip Code": "12345",
-            "Visa Purpose": "Business Conference Attendance",
-            "Destination Country": "United States",
-            "Travel Start Date": datetime.now().strftime("%B %d, %Y"),
-            "Travel End Date": (datetime.now() + timedelta(days=10)).strftime("%B %d, %Y"),
-            "Country": "United States"
+            "Visa Purpose": "[Visa Purpose]",
+            "Destination Country": "[Destination Country]",
+            "Travel Start Date": "[Travel Start Date]",
+            "Travel End Date": "[Travel End Date]",
+            "Country": "[Country]"
         }
 
 def personalize_template(template_data: Dict, employee_data: Dict[str, str]) -> str:

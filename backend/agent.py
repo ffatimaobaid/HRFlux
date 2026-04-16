@@ -121,13 +121,13 @@ def validate_hr_query(question: str, history: List[Dict[str, str]] = None) -> tu
                 "role": "system",
                 "content": (
                     "You are a query classifier for a company HR chatbot. "
-                    "Determine if the user query is HR-related or not.\n\n"
-                    "CONSIDER THE CONTEXT: If the user is responding to a previous HR-related question "
-                    "(e.g., providing details, saying 'yes', 'no' or 'i can't say'), classify as HR.\n\n"
+                    "Determine if the user query is HR-related or not. HR-related includes leave, meetings, documents, and policies.\n\n"
+                    "CONSIDER THE CONTEXT: If the user is responding to a previous HR-related query "
+                    "(e.g., providing details, saying 'yes', 'no'), classify as HR.\n\n"
                     "Reply with ONLY one word — HR or NON_HR."
                 )
             },
-            {"role": "user", "content": f"History: {history}\n\nCurrent Question: {question}"},
+            {"role": "user", "content": f"History: {history}\n\Current Question: {question}"},
         ]
 
         result = llm.invoke(messages)
@@ -138,7 +138,8 @@ def validate_hr_query(question: str, history: List[Dict[str, str]] = None) -> tu
                 "I'm HRFLUX, your dedicated HR assistant. I can only help with HR-related topics such as:\n"
                 "• 🏖️ Leave requests and balance\n"
                 "• 📋 HR policies, benefits, and company rules\n"
-                "• 📄 Official documents (NOC, experience letter, salary certificate)\n"
+                "• 📄 Official documents (NOC, salary certificate, etc.)\n"
+                "• 📅 Meeting and event scheduling\n"
                 "• 🚨 Employee grievances and escalations\n\n"
                 "Please ask me something related to your workplace or HR matters!"
             )

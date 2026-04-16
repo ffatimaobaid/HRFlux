@@ -135,6 +135,7 @@ class EmployeeResponse(BaseModel):
     designation: str
     joining_date: str
     manager_id: Optional[str]
+    manager_name: Optional[str] = None
     casual_leave_balance: int
     sick_leave_balance: int
     annual_leave_balance: int

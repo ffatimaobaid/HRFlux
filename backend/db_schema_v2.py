@@ -383,9 +383,19 @@ def get_employee(employee_id=None, username=None):
     c = conn.cursor()
     
     if employee_id:
-        c.execute("SELECT * FROM employees WHERE employee_id = ?", (employee_id,))
+        c.execute("""
+            SELECT e.*, m.full_name as manager_name 
+            FROM employees e 
+            LEFT JOIN employees m ON e.manager_id = m.employee_id 
+            WHERE e.employee_id = ?
+        """, (employee_id,))
     elif username:
-        c.execute("SELECT * FROM employees WHERE username = ?", (username,))
+        c.execute("""
+            SELECT e.*, m.full_name as manager_name 
+            FROM employees e 
+            LEFT JOIN employees m ON e.manager_id = m.employee_id 
+            WHERE e.username = ?
+        """, (username,))
     else:
         return None
     
@@ -396,7 +406,7 @@ def get_employee(employee_id=None, username=None):
         columns = ['employee_id', 'username', 'password', 'full_name', 'email', 
                   'department', 'designation', 'joining_date', 'manager_id',
                   'casual_leave_balance', 'sick_leave_balance', 'annual_leave_balance',
-                  'salary', 'status', 'created_at']
+                  'salary', 'status', 'created_at', 'manager_name']
         return dict(zip(columns, row))
     return None
 
@@ -477,14 +487,20 @@ def get_all_employees():
             print("Employees table does not exist, returning empty list")
             return []
         
-        c.execute("SELECT * FROM employees WHERE status = 'active' ORDER BY full_name")
+        c.execute("""
+            SELECT e.*, m.full_name as manager_name 
+            FROM employees e 
+            LEFT JOIN employees m ON e.manager_id = m.employee_id 
+            WHERE e.status = 'active' 
+            ORDER BY e.full_name
+        """)
         rows = c.fetchall()
         conn.close()
         
         columns = ['employee_id', 'username', 'password', 'full_name', 'email', 
                   'department', 'designation', 'joining_date', 'manager_id',
                   'casual_leave_balance', 'sick_leave_balance', 'annual_leave_balance',
-                  'salary', 'status', 'created_at']
+                  'salary', 'status', 'created_at', 'manager_name']
         
         return [dict(zip(columns, row)) for row in rows]
     except Exception as e:
