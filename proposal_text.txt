@@ -1,0 +1,383 @@
+HRFlux: An AI-Powered Multi-Agent
+HR Assistant.
+Project Team
+Fatima Obaid
+22I-0475
+Hadia Mazhar
+22I-0487
+Shayane Zainab 22I-1049
+Session 2022-2026
+Supervised by
+Mr.Adil Majeed
+Department of Computer Science
+National University of Computer and Emerging Sciences
+Islamabad, Pakistan
+June, 2026
+
+Contents
+1
+Introduction
+1
+1.1
+Problem Statement
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+1
+1.2
+Motivation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+2
+1.3
+Project Description . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+2
+1.4
+Project Objectives . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+3
+1.5
+Stake Holders . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+4
+2
+Project Description
+5
+2.1
+Scope
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+5
+2.2
+Modules . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+5
+2.2.1
+Module 1: Data Collection & Database Management . . . . . . .
+6
+2.2.2
+Module 2: Knowledge Base & Backend Services . . . . . . . . .
+6
+2.2.3
+Module 3: HR Agent Layer . . . . . . . . . . . . . . . . . . . . .
+6
+2.2.4
+Module 4: Interfaces (Employee & Admin Portals) . . . . . . . .
+7
+2.3
+Tools and Technologies . . . . . . . . . . . . . . . . . . . . . . . . . . .
+7
+2.4
+Work Division . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+8
+2.5
+Timeline . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+8
+2
+
+List of Figures
+3
+
+List of Tables
+2.1
+Table 1: Work Division . . . . . . . . . . . . . . . . . . . . . . . . . . .
+8
+2.2
+Table 2: Project Timeline . . . . . . . . . . . . . . . . . . . . . . . . . .
+9
+0
+
+Chapter 1
+Introduction
+This scope document is basically about setting the purpose, background, limits, and main
+outcomes for HRFlux, which is an AI-based HR automation system. The idea behind
+HRFlux is to cut down on repetitive manual work and make the overall employee experi-
+ence smoother. In this document, I’ll explain why the system is being created, what spe-
+cific problems it aims to solve, the general technical approach, and also give an overview
+of the timeline and success measures for the project. HRFlux is built around multiple spe-
+cialized agents that can chat with employees, a searchable HR knowledge base, automated
+handling of documents, reminders, and workflows for escalations. All these features come
+together to take care of routine HR tasks and provide employees with quick, consistent,
+and relevant answers. This proposal also connects back to the early research, prototypes,
+and requirements that were already shared in the project presentation and slides.
+1.1
+Problem Statement
+HR teams often spend way too much time dealing with the same small questions over
+and over, like checking leave balances, providing NOCs, or explaining policies. For em-
+ployees, finding clear answers is also a struggle because information is usually buried in
+long documents or hidden on intranet pages. This leads to repeated questions, unneces-
+sary follow-ups, and slow approvals. On top of that, HR staff end up giving inconsistent
+responses, which adds to the confusion and floods their inboxes and chat channels.
+The real problem is that all this manual work keeps HR people busy with routine tasks
+instead of letting them focus on bigger priorities like performance management, talent
+growth, or updating policies. Smaller HR teams feel this pressure even more, since even
+a small rise in routine queries can eat up a huge chunk of their time. Current chatbot or
+FAQ tools don’t help much either—they usually give generic, out-of-context answers that
+frustrate employees and eventually push them to contact HR directly.
+1
+
+1. Introduction
+When it comes to generating documents, such as experience letters, NOCs, or approval
+memos, most of it is still done by hand, which is both slow and error-prone. There’s
+also very little automation for reminders or escalations, so deadlines and SLAs often
+get missed. To make things worse, knowledge silos and poor search functions mean
+employees can’t easily discover the benefits or entitlements available to them. Without
+session memory, the system can’t handle multi-step or personalized interactions, which
+makes it less useful. Inconsistent answers also raise compliance and audit risks, especially
+when official approvals or documentation are involved.
+HRFlux is being designed to tackle these problems head-on. The goal is to automate
+routine HR tasks, provide accurate and timely responses, and ease the workload on HR
+staff so they can concentrate on more meaningful, high-value work.
+1.2
+Motivation
+The main drive behind this project is to make HR processes quicker, more reliable, and
+more focused on employees—without having to hire extra staff. By automating routine
+questions and workflows, we can cut down the time it takes to resolve issues, save costs,
+and also improve how satisfied employees feel with HR support. Using a modular, mul-
+tiagent setup means each agent can handle a specific area, which gives more accurate
+results than a generic chatbot. A searchable knowledge base also makes sure answers are
+always linked back to official policies instead of guesswork. On top of that, features like
+proactive reminders and escalation workflows help the company stick to SLAs and reduce
+mistakes that usually happen when everything is handled manually. Another big reason
+for doing this is to actually build a working prototype, which not only shows the real ROI
+of AI in HR but also helps the team gain hands-on experience in system integration, data
+privacy, and managing multiple agents working together.
+1.3
+Project Description
+We are proposing HRFlux, an AI-powered HR assistant made up of multiple special-
+ized agents. Instead of one generic chatbot, each agent has its own role—for example,
+LeaveBot for leave requests, PolicyBot for policy-related questions, and DocumentBot
+for generating letters or memos. Since every agent handles a specific area, the answers
+are more reliable and easier to track. These agents work together through a simple co-
+ordination layer so they can carry out step-by-step tasks like applying for leave, routing
+approvals, or creating official documents.
+To answer policy questions, the system uses retrieval-augmented methods that combine
+2
+
+1.4 Project Objectives
+semantic search with extractive QA, ensuring that responses are grounded in the orga-
+nization’s actual HR documents. A memory component also keeps track of the context
+across sessions, so employees don’t have to repeat the same details every time, making
+interactions feel more personal.
+For documents, the system uses predefined templates (such as NOCs, experience letters,
+or approval forms) to save time and reduce errors, while keeping everything consistent and
+compliant. HRFlux also includes proactive reminders and notifications to prevent missed
+deadlines or SLA breaches. If a case cannot be resolved automatically, it is escalated to
+the right HR officer along with the full conversation history, ensuring smooth handover
+and accountability.
+The system has two main parts: a chatbot interface for employees and an admin dashboard
+for HR staff, which lets them review, approve, or adjust outputs when needed. Built-in
+safeguards like role-based access, privacy controls, and audit logs keep it compliant with
+organizational standards.
+To integrate smoothly into existing systems, HRFlux will connect with HRIS and payroll
+platforms through APIs, allowing updates like leave status to be managed automatically.
+The system will also track performance through metrics such as response time, resolution
+rate, number of escalations, and hours saved for HR staff.
+Development will follow an iterative approach, starting with the core knowledge base
+and main agents, then gradually adding features like document automation, reminders,
+memory, and admin tools. The end goal is to deliver a working prototype that reduces HR
+workload, improves consistency, and demonstrates real productivity gains.
+1.4
+Project Objectives
+• Automate answers to the top 80% of routine HR queries (leave, NOC, policy clari-
+fications).
+• Implement specialized agents (LeaveBot, PolicyBot, DocumentBot) with domain
+accuracy.
+• Build a semantic, searchable HR knowledge base that ingests policy documents and
+FAQs.
+• Add document automation templates for NOCs, experience letters, and approval
+memos.
+• Implement contextual session memory for personalized multi-step interactions.
+• Provide configurable proactive reminders and escalation workflows.
+3
+
+1. Introduction
+• Deliver an HR admin dashboard for auditing, overrides, and metrics.
+• Integrate with at least one HRIS/payroll system via API for read/write of leave data.
+• Ensure role-based access control, logging, and privacy compliance.
+• Measure and report KPIs: average resolution time, resolution rate, escalations, and
+estimated HR hours saved.
+1.5
+Stake Holders
+• HR managers and HR officers (primary users and approvers).
+• Employees (end users who will ask queries and receive documents).
+• IT/DevOps (integration, deployment, and API connectivity).
+• Legal Compliance (review policies, privacy, audit requirements).
+4
+
+Chapter 2
+Project Description
+2.1
+Scope
+The proposed system, HRFlux, is designed in a modular way to ensure clarity, scalability,
+and efficient development. Each module is responsible for a specific set of functions,
+and together they achieve the overall objectives of the system. The backend modules
+handle data management, knowledge processing, and AI-driven agent operations. The
+agent layer is responsible for query handling, document generation, and task escalation.
+On the front end, employees interact with the system through a chatbot, while HR staff
+use an admin portal for management and approvals. This separation ensures that both
+employees and HR teams have tailored interfaces suited to their needs. The modular
+design also allows for independent development and testing, making the system more
+robust. Overall, these modules work together to reduce repetitive HR tasks, improve
+response times, and streamline operations across the organization.
+2.2
+Modules
+The proposed system, HRFlux, is designed in a modular way to ensure clarity, scalability,
+and efficient development. Each module is responsible for a specific set of functions,
+and together they achieve the overall objectives of the system. The backend modules
+handle data management, knowledge processing, and AI-driven agent operations. The
+agent layer is responsible for query handling, document generation, and task escalation.
+On the front end, employees interact with the system through a chatbot, while HR staff
+use an admin portal for management and approvals. This separation ensures that both
+employees and HR teams have tailored interfaces suited to their needs. The modular
+design also allows for independent development and testing, making the system more
+5
+
+2. Project Description
+robust. Overall, these modules work together to reduce repetitive HR tasks, improve
+response times, and streamline operations across the organization.
+2.2.1
+Module 1: Data Collection & Database Management
+This module is responsible for collecting, organizing, and storing HR-related data. It
+ensures centralized access to employee records, leave balances, and policy documents,
+forming the foundation of the system.
+1. Employee Database – Stores employee profiles, leave balances, and payroll details.
+2. Policy Document Upload – Allows HR staff to upload and manage company poli-
+cies.
+3. Structured HR Data – Integrates mock HRMS/Payroll data for workflows.
+4. Knowledge Preparation – Prepares documents for search and retrieval.
+2.2.2
+Module 2: Knowledge Base & Backend Services
+This module transforms stored data into a usable knowledge base and provides backend
+APIs for agents. It supports semantic search, workflow management, and system integra-
+tions.
+1. Vector Database Integration – Embeds and indexes HR documents for semantic
+search.
+2. Backend APIs – Provide access to employee data, leave balances, and payroll info.
+3. Workflow Engine – Handles leave requests, approvals, and rejections.
+4. Search & Retrieval – Delivers accurate responses from policy documents.
+2.2.3
+Module 3: HR Agent Layer
+This module introduces specialized AI-driven agents, each focused on a specific HR func-
+tion. These agents work with backend services to resolve employee queries and generate
+documents.
+1. LeaveBot – Handles leave balance queries and applications.
+2. PolicyBot – Responds to HR policy and guideline questions.
+6
+
+2.3 Tools and Technologies
+3. DocuBot – Generates HR documents such as NOC letters and leave approvals.
+4. EscalationBot – Routes unresolved or sensitive queries to HR staff.
+2.2.4
+Module 4: Interfaces (Employee & Admin Portals)
+This module provides interaction points for employees and HR staff. Employees use a
+chatbot for queries, while HR staff access an admin portal for management and approvals.
+1. Employee Chatbot – Allows leave applications, document requests, and policy
+checks.
+2. Admin Portal – Enables HR staff to manage profiles, policies, and leave approvals.
+3. Query Logs – Maintains records of employee queries for monitoring.
+4. Approval Dashboard – Provides tools for HR staff to handle approvals and escala-
+tions.
+2.3
+Tools and Technologies
+The development of HRFlux requires a combination of tools and technologies that cover
+data storage, backend services, AI agent development, and user interface design. These
+tools ensure smooth integration between modules and provide a scalable environment for
+future enhancements. The major tools and technologies are as follows:
+1. Programming Languages: Python for implementing AI agents, backend services,
+and integration; JavaScript/TypeScript for frontend development.
+2. Frameworks: FastAPI for building backend APIs and services; React.js for devel-
+oping the employee chatbot interface and admin web portal.
+3. Databases: MySQL or PostgreSQL for structured employee and HR data; FAISS
+or Chroma for vector database to enable semantic search of policy documents.
+4. AI Libraries: LangChain, AutoGen, or LangGraph for creating and managing
+multi-agent workflows; Hugging Face Transformers for NLP tasks.
+5. Document Processing: PyPDF2, PDFplumber, or related libraries for extracting
+and embedding HR policy documents.
+6. Frontend Tools: HTML, CSS, and Bootstrap/Tailwind for building responsive and
+user-friendly interfaces.
+7
+
+2. Project Description
+7. Version Control: Git and GitHub for collaborative development and version man-
+agement.
+8. Deployment Tools: Docker for containerization and easy deployment of backend
+services; WebSockets for enabling real-time communication between chatbot and
+backend.
+9. Collaboration Tools: Slack or Microsoft Teams integration for cross-platform
+query handling; Postman for API testing.
+2.4
+Work Division
+The tasks of the project are divided equally among the three team members. Each mem-
+ber is assigned features from all modules to ensure balanced participation and collective
+ownership of the system.
+Table 2.1: Table 1: Work Division
+Name
+Registration
+Responsibility / Module / Feature
+Ms. Fatima
+22i-0475
+(Module 1 – Feat 1-2) Data collection and database
+design.
+(Module 2 – Feat 1) Policy document upload.
+(Module 3 – Feat 2) EscalationBot development.
+(Module 4 – Feat 1) Employee chatbot
+Ms. Shayane
+22i-1049
+(Module 1 – Feat 3) Data preprocessing.
+(Module 2 – Feat 2) Knowledge base embedding and
+retrieval.
+(Module 3 – Feat 1,3) LeaveBot and PolicyBot devel-
+opment.
+(Module 4 – Feat 2) Query logs and tracking
+Ms. Hadia
+22i-087
+(Module 1 – Feat 4) HR policy document integration.
+(Module 1 – Feat 5) Policy search and answering.
+(Module 3 – Feat 4) DocuBot for auto-document gen-
+eration.
+(Module 4 – Feat 3) Admin dashboard and employee
+profile management
+2.5
+Timeline
+The project timeline is divided into four major iterations. Each iteration focuses on a
+distinct set of tasks, ensuring progressive development and integration of all system com-
+8
+
+2.5 Timeline
+ponents.
+Table 2.2: Table 2: Project Timeline
+Iteration #
+Time Frame
+Tasks
+01
+Sept–Oct
+Data collection, database design, and storage setup
+02
+Nov–Dec
+Document preprocessing, policy retrieval, and embedding generation
+03
+Jan–Feb
+Multi-agent workflow development and query handling
+04
+Mar–Apr
+Admin dashboard creation, integration, and testing
+9
+
+
+Bibliography
+[1] K. Ekuma. Artificial intelligence and automation in human resource development.
+Journal of Human Resource Development, 2024.
+[2] Thi Thu Uyen Hoang and Viet Anh Nguyen. Pdf retrieval augmented question an-
+swering. arXiv preprint arXiv:2506.18027, 2025.
+[3] Mustafa Jarrar, Luk Vervenne, Diana Maynard, Andreas P. Schmidt, et al.
+The
+semantic challenges and opportunities in the human resources domain.
+OOA
+Publication/OOA-HR, 2007.
+[4] Soyeong Jeong, Jinheon Baek, Sukmin Cho, Sung Ju Hwang, and Jong C. Park.
+Adaptive-rag: Learning to adapt retrieval-augmented large language models through
+question complexity. arXiv preprint arXiv:2403.14403, 2024.
+[5] Fengrui Liu, Xiao He, Tieying Zhang, Jianjun Chen, Yi Li, Lihua Yi, Haipeng Zhang,
+Gang Wu, and Rui Shi. Tickit: Leveraging large language models for automated ticket
+escalation. arXiv preprint arXiv:2504.08475, 2025.
+[6] C. Malin, C. Kupfer, J. Fleiß, B. Kubicek, and S. Thalmann. In the ai of the be-
+holder—a qualitative study of hr professionals’ beliefs about ai-based chatbots and
+decision support in candidate pre-selection.
+Administrative Sciences, 13(11):231,
+2023.
+[7] Microsoft. Retrieval-augmented generation (rag) in azure ai search. Microsoft Docs,
+2025. Accessed: 2025-09-12.
+11
