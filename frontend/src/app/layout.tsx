@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 import { AntdRegistry } from "@ant-design/nextjs-registry";
-import { ConfigProvider } from "antd";
+import { ConfigProvider, App } from "antd";
 
 export default function RootLayout({
   children,
@@ -49,6 +49,7 @@ export default function RootLayout({
                 Button: {
                   boxShadow: 'none',
                   controlOutline: 'none',
+                  colorTextLightSolid: '#ffffff',
                 },
                 Input: {
                   activeShadow: 'none',
@@ -56,9 +57,11 @@ export default function RootLayout({
               }
             }}
           >
-            <AuthProvider>
-              {children}
-            </AuthProvider>
+            <App>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </App>
           </ConfigProvider>
         </AntdRegistry>
       </body>

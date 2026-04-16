@@ -437,6 +437,41 @@ class LeaveWorkflowEngine:
 
 
     @staticmethod
+    def get_analytics():
+        """
+        Calculate resolution rate and average resolution time for leave requests.
+        """
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        try:
+            # Resolution Rate
+            c.execute("SELECT COUNT(*) FROM leave_requests_v2")
+            total = c.fetchone()[0]
+            
+            c.execute("SELECT COUNT(*) FROM leave_requests_v2 WHERE status IN ('approved', 'rejected')")
+            resolved = c.fetchone()[0]
+            
+            res_rate = (resolved / total * 100) if total > 0 else 0
+            
+            # Avg Resolution Time (only for approved/rejected)
+            c.execute("""
+                SELECT 
+                    AVG(julianday(approved_at) - julianday(submitted_at)) 
+                FROM leave_requests_v2 
+                WHERE status IN ('approved', 'rejected') AND approved_at IS NOT NULL
+            """)
+            avg_days = c.fetchone()[0] or 0
+            
+            return {
+                "resolution_rate": round(res_rate, 1),
+                "avg_resolution_time": round(avg_days, 1)
+            }
+        finally:
+            conn.close()
+
+
+    @staticmethod
     def get_all_escalations():
         """
         Get all workflow escalations.
@@ -708,3 +743,50 @@ class ChatEscalationEngine:
                 'resolved_at': r[4]
             })
         return history
+
+
+    @staticmethod
+    def get_analytics():
+        """
+        Calculate metrics for chat escalations and estimated savings.
+        """
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        try:
+            # AI Savings calculation
+            # Rule: Each chat message saved by AI (not escalated) saves ~15 mins of HR time
+            c.execute("SELECT COUNT(*) FROM logs")
+            total_messages = c.fetchone()[0]
+            
+            c.execute("SELECT COUNT(*) FROM chat_escalations")
+            total_escalations = c.fetchone()[0]
+            
+            # Simple heuristic: messages that didn't lead to escalation
+            # Or just total successful interactions
+            # Let's say: (total_messages / 2) - escalations = successful sessions
+            # assuming avg 2 messages per session
+            sessions = total_messages / 2
+            saved_sessions = max(0, sessions - total_escalations)
+            
+            # Each saved session = 15 mins (0.25 hrs)
+            hr_hours_saved = saved_sessions * 0.25
+            
+            # Escalation resolution time
+            c.execute("""
+                SELECT 
+                    AVG(julianday(resolved_at) - julianday(created_at)) 
+                FROM chat_escalations 
+                WHERE status = 'resolved' AND resolved_at IS NOT NULL
+            """)
+            avg_days = c.fetchone()[0] or 0
+            
+            return {
+                "hr_hours_saved": round(hr_hours_saved, 1),
+                "avg_escalation_time": round(avg_days, 1)
+            }
+        except Exception as e:
+            print(f"Analytics error: {e}")
+            return {"hr_hours_saved": 0, "avg_escalation_time": 0}
+        finally:
+            conn.close()

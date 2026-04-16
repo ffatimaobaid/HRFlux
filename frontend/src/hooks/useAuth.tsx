@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const checkAuth = async () => {
       const token = localStorage.getItem('hrflux_token');
 
-      if (!token && pathname !== '/login') {
+      if (!token && pathname !== '/login' && pathname !== '/') {
         router.push('/login');
         setLoading(false);
         return;
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Verify token with backend
           const res = await authApi.getMe();
           const userRole = res.data.role || 'employee';
-          
+
           setUser({
             username: res.data.username,
             employee_id: res.data.employee_id,
@@ -54,9 +54,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           document.cookie = `hrflux_role=${userRole}; path=/; max-age=86400; samesite=lax`;
 
           // Proactive dynamic redirection - Ensure ADMIN stays on Admin Side
-          if (userRole === 'admin' && pathname === '/dashboard') {
+          const isPublicPath = pathname === '/' || pathname === '/login';
+
+          if (userRole === 'admin' && (pathname === '/dashboard' || isPublicPath)) {
             router.push('/admin');
-          } else if (userRole === 'employee' && pathname.startsWith('/admin')) {
+          } else if (userRole === 'employee' && (pathname.startsWith('/admin') || isPublicPath)) {
             router.push('/dashboard');
           }
 

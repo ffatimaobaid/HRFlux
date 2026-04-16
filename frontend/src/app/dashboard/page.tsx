@@ -22,7 +22,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { Input, Button, notification } from 'antd';
+import { Input, Button, App } from 'antd';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -118,7 +118,7 @@ function PdfDownloadCard({ filename, url }: { filename: string; url: string }) {
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
-  
+
   // Strict lockdown: Never show employee dashboard to an admin
   if (authLoading || (user && user.role !== 'employee')) {
     return <div className="h-screen bg-[#f8f9ff] flex items-center justify-center">
@@ -136,6 +136,7 @@ export default function Dashboard() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [isAnnOpen, setIsAnnOpen] = useState(false);
   const annRef = useRef<HTMLDivElement>(null);
+  const { notification, message } = App.useApp();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -195,14 +196,14 @@ export default function Dashboard() {
       const visible = (res.data as ProactiveNotification[]).filter(
         (n) => !n.id || !dismissed.has(n.id)
       );
-      
+
       // Check for new "Approved" notifications to show a Toast
       visible.forEach(n => {
         if (n.id && !lastSeenNotifs.current.has(n.id)) {
           lastSeenNotifs.current.add(n.id);
           if (n.title.includes('Approved') || n.type === 'success') {
             notification.success({
-              message: n.title,
+              title: n.title,
               description: n.message,
               placement: 'topRight',
               duration: 10,
@@ -324,133 +325,129 @@ export default function Dashboard() {
         <header className="h-16 border-b border-gray-100 bg-white flex items-center justify-between px-8">
           <h1 className="text-xl font-bold text-gray-800">🤖 Chat Assistant</h1>
           {/* Proactive Notifications Header Icon */}
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium text-gray-500">Model: Gemini 1.5 Flash</span>
-          
-          {/* Notification Bell */}
-          <div className="relative" ref={notifRef}>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsNotifOpen(!isNotifOpen)}
-              className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#7b2ff7] hover:bg-[#f4effc] rounded-xl transition-all relative"
-            >
-              <Bell size={20} />
-              {notifications.length > 0 && (
-                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
-              )}
-            </motion.button>
+          <div className="flex items-center gap-4">
 
-            <AnimatePresence>
-              {isNotifOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 mt-3 w-80 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-[100]"
-                >
-                  <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
-                    <h4 className="font-black text-gray-800 tracking-tight">Notifications</h4>
-                    <span className="text-[10px] font-bold bg-[#e0d4fc] text-[#5b1ab5] px-2 py-0.5 rounded-full uppercase">
-                      {notifications.length} New
-                    </span>
-                  </div>
-                  <div className="max-h-96 overflow-y-auto">
-                    {notifications.length > 0 ? (
-                      <SmartNotification 
-                        isDropdown 
-                        notifications={notifications}
-                        onAction={handleNotifAction}
-                        onClose={handleCloseNotification}
-                      />
-                    ) : (
-                      <div className="p-8 text-center">
-                        <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Bell size={20} className="text-gray-300" />
+            {/* Notification Bell */}
+            <div className="relative" ref={notifRef}>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsNotifOpen(!isNotifOpen)}
+                className="p-2.5 bg-gray-50 text-gray-400 hover:text-[#7b2ff7] hover:bg-[#f4effc] rounded-xl transition-all relative"
+              >
+                <Bell size={20} />
+                {notifications.length > 0 && (
+                  <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
+                )}
+              </motion.button>
+
+              <AnimatePresence>
+                {isNotifOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-3 w-80 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-[100]"
+                  >
+                    <div className="p-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
+                      <h4 className="font-black text-gray-800 tracking-tight">Notifications</h4>
+                      <span className="text-[10px] font-bold bg-[#e0d4fc] text-[#5b1ab5] px-2 py-0.5 rounded-full uppercase">
+                        {notifications.length} New
+                      </span>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {notifications.length > 0 ? (
+                        <SmartNotification
+                          isDropdown
+                          notifications={notifications}
+                          onAction={handleNotifAction}
+                          onClose={handleCloseNotification}
+                        />
+                      ) : (
+                        <div className="p-8 text-center">
+                          <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <Bell size={20} className="text-gray-300" />
+                          </div>
+                          <p className="text-sm font-bold text-gray-400">All caught up!</p>
                         </div>
-                        <p className="text-sm font-bold text-gray-400">All caught up!</p>
+                      )}
+                    </div>
+                    {notifications.length > 0 && (
+                      <div className="p-3 bg-gray-50 border-t border-gray-100 text-center">
+                        <button className="text-[10px] font-black text-[#7b2ff7] hover:text-[#5b1ab5] uppercase tracking-widest">
+                          Clear All
+                        </button>
                       </div>
                     )}
-                  </div>
-                  {notifications.length > 0 && (
-                    <div className="p-3 bg-gray-50 border-t border-gray-100 text-center">
-                      <button className="text-[10px] font-black text-[#7b2ff7] hover:text-[#5b1ab5] uppercase tracking-widest">
-                        Clear All
-                      </button>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-          {/* Announcement Hub */}
-          <div className="relative" ref={annRef}>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsAnnOpen(!isAnnOpen)}
-              className={`p-2.5 rounded-xl transition-all relative ${
-                announcements.some(a => a.priority === 'high')
+            {/* Announcement Hub */}
+            <div className="relative" ref={annRef}>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsAnnOpen(!isAnnOpen)}
+                className={`p-2.5 rounded-xl transition-all relative ${announcements.some(a => a.priority === 'high')
                   ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
                   : 'bg-gray-50 text-gray-400 hover:text-orange-500 hover:bg-orange-50'
-              }`}
-            >
-              <Megaphone size={20} className={announcements.length > 0 ? "animate-bounce" : ""} />
-              {announcements.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full border-2 border-white">
-                  {announcements.length}
-                </span>
-              )}
-            </motion.button>
+                  }`}
+              >
+                <Megaphone size={20} className={announcements.length > 0 ? "animate-bounce" : ""} />
+                {announcements.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-[8px] font-black text-white px-1.5 py-0.5 rounded-full border-2 border-white">
+                    {announcements.length}
+                  </span>
+                )}
+              </motion.button>
 
-            <AnimatePresence>
-              {isAnnOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 mt-3 w-96 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-[100]"
-                >
-                  <div className="p-5 border-b border-gray-50 bg-orange-50/30 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                       <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
+              <AnimatePresence>
+                {isAnnOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-3 w-96 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-[100]"
+                  >
+                    <div className="p-5 border-b border-gray-50 bg-orange-50/30 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-orange-100 text-orange-600 rounded-lg">
                           <Megaphone size={16} />
-                       </div>
-                       <h4 className="font-black text-gray-800 tracking-tight">Company Broadcasts</h4>
+                        </div>
+                        <h4 className="font-black text-gray-800 tracking-tight">Company Broadcasts</h4>
+                      </div>
                     </div>
-                  </div>
-                  <div className="max-h-[500px] overflow-y-auto p-4 space-y-4 custom-scrollbar">
-                    {announcements.length > 0 ? (
-                      announcements.map((ann, idx) => (
-                        <div key={idx} className={`p-4 rounded-2xl border ${
-                          ann.priority === 'high' ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'
-                        }`}>
-                           <div className="flex items-center justify-between mb-2">
-                              <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest ${
-                                ann.priority === 'high' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
-                              }`}>
+                    <div className="max-h-[500px] overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                      {announcements.length > 0 ? (
+                        announcements.map((ann, idx) => (
+                          <div key={idx} className={`p-4 rounded-2xl border ${ann.priority === 'high' ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100'
+                            }`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest ${ann.priority === 'high' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-500'
+                                }`}>
                                 {ann.priority} Priority
                               </span>
                               <span className="text-[10px] text-gray-400 font-bold">{format(new Date(ann.created_at), 'MMM dd, HH:mm')}</span>
-                           </div>
-                           <h5 className="font-black text-gray-900 mb-1 leading-tight">{ann.title}</h5>
-                           <p className="text-xs text-gray-600 leading-relaxed">{ann.content}</p>
+                            </div>
+                            <h5 className="font-black text-gray-900 mb-1 leading-tight">{ann.title}</h5>
+                            <p className="text-xs text-gray-600 leading-relaxed">{ann.content}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-20 text-center opacity-40">
+                          <Megaphone size={48} className="mx-auto mb-4 text-gray-300" />
+                          <p className="font-bold">No active broadcasts</p>
                         </div>
-                      ))
-                    ) : (
-                      <div className="py-20 text-center opacity-40">
-                         <Megaphone size={48} className="mx-auto mb-4 text-gray-300" />
-                         <p className="font-bold">No active broadcasts</p>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-          <div className="w-10 h-10 rounded-full border-2 border-[#e0d4fc] p-0.5">
+            <div className="w-10 h-10 rounded-full border-2 border-[#e0d4fc] p-0.5">
               <div className="w-full h-full bg-[#f4effc] rounded-full flex items-center justify-center text-[#7b2ff7] font-bold">
                 {user?.username?.charAt(0).toUpperCase()}
               </div>
@@ -505,11 +502,10 @@ export default function Dashboard() {
               >
                 <div className={`flex gap-3 max-w-[80%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                   <div
-                    className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ${
-                      msg.role === 'user'
-                        ? 'bg-[#7b2ff7] text-white'
-                        : 'bg-white border border-gray-200 text-[#7b2ff7]'
-                    }`}
+                    className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ${msg.role === 'user'
+                      ? 'bg-[#7b2ff7] text-white'
+                      : 'bg-white border border-gray-200 text-[#7b2ff7]'
+                      }`}
                   >
                     {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
                   </div>
@@ -517,11 +513,10 @@ export default function Dashboard() {
                   <div className="space-y-2">
                     {/* Message bubble */}
                     <div
-                      className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${
-                        msg.role === 'user'
-                          ? 'bg-[#7b2ff7] text-white rounded-tr-none'
-                          : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-                      }`}
+                      className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${msg.role === 'user'
+                        ? 'bg-[#7b2ff7] text-white rounded-tr-none'
+                        : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
+                        }`}
                     >
                       {msg.content}
                     </div>

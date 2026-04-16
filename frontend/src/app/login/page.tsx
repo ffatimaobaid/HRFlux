@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { authApi } from '@/lib/api';
-import { LogIn, UserPlus, Bot, Users } from 'lucide-react';
+import { LogIn, UserPlus, Bot, Users, ArrowLeft } from 'lucide-react';
 import { Input, Button } from 'antd';
 
 export default function LoginPage() {
@@ -31,13 +31,13 @@ export default function LoginPage() {
         localStorage.setItem('hrflux_token', res.data.token);
         localStorage.setItem('hrflux_user', res.data.username);
         localStorage.setItem('hrflux_employee_id', res.data.employee_id);
-        
+
         const userRole = res.data.role || 'employee';
         const isAdmin = userRole === 'admin';
-        
+
         // Immediate cookie setting for middleware sync
         document.cookie = `hrflux_role=${userRole}; path=/; max-age=86400; samesite=lax`;
-        
+
         // Small delay to ensure cookie is processed by browser
         setTimeout(() => {
           if (isAdmin) {
@@ -56,13 +56,21 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen bg-[#faf5ff] items-center justify-center p-4">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex w-full max-w-4xl bg-white rounded-3xl overflow-hidden shadow-2xl"
+        className="flex w-full max-w-4xl bg-white rounded-3xl overflow-hidden shadow-2xl shadow-[#6422d3]/25"
       >
         {/* Left Side: Form */}
         <div className="flex-1 p-12">
+          <button
+            type="button"
+            onClick={() => router.push('/')}
+            className="flex items-center gap-2 text-gray-500 hover:text-black transition-colors mb-6 font-medium text-sm"
+          >
+            <ArrowLeft size={16} /> Back to Home
+          </button>
+
           <div className="flex items-center gap-3 mb-8">
             <div className="bg-black p-2 rounded-lg text-white">
               <Bot size={24} />
@@ -70,14 +78,16 @@ export default function LoginPage() {
             <span className="text-2xl font-bold tracking-tight">HRFLUX</span>
           </div>
 
-          <h2 className="text-3xl font-bold mb-2">
-            {isSignup ? 'Create your account' : 'Welcome back'}
-          </h2>
-          <p className="text-gray-500 mb-8">
-            {isSignup 
-              ? 'Sign up to start using your AI-powered HR assistant.' 
-              : 'AI-powered HR assistant, tailored to your workplace.'}
-          </p>
+          {isSignup && (
+            <>
+              <h2 className="text-3xl font-bold mb-2">
+                Create your account
+              </h2>
+              <p className="text-gray-500 mb-8">
+                Sign up to start using your AI-powered HR assistant.
+              </p>
+            </>
+          )}
 
           <form onSubmit={handleAuth} className="space-y-4">
             {isSignup && (
@@ -138,9 +148,9 @@ export default function LoginPage() {
               size="large"
               loading={loading}
               className="w-full mt-4 font-bold h-12 text-base transition-opacity hover:opacity-90 active:scale-[0.98]"
-              icon={isSignup ? <UserPlus size={18} /> : <LogIn size={18} />}
+              icon={!loading && (isSignup ? <UserPlus size={18} /> : <LogIn size={18} />)}
             >
-              {isSignup ? 'Create Account' : 'Login'}
+              {loading ? (isSignup ? 'Creating...' : 'Logging in...') : (isSignup ? 'Create Account' : 'Login')}
             </Button>
           </form>
 
@@ -156,9 +166,9 @@ export default function LoginPage() {
         </div>
 
         {/* Right Side: Visual */}
-        <div className="hidden lg:flex flex-1 bg-[#7b2ff7] p-12 items-center justify-center">
+        <div className="hidden lg:flex flex-1 bg-[#6422d3] p-12 items-center justify-center">
           <div className="max-w-xs text-white text-center">
-            <motion.div 
+            <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ repeat: Infinity, duration: 4 }}
               className="text-7xl mb-6 flex justify-center"

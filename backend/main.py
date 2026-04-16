@@ -97,7 +97,12 @@ app.add_middleware(SecurityHeadersMiddleware)
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -662,10 +667,18 @@ async def get_admin_stats(token: str = Depends(verify_admin_token)):
     pending_leaves = LeaveWorkflowEngine.get_pending_requests()
     all_escalations = LeaveWorkflowEngine.get_combined_active_escalations()
     
+    # Analytics
+    leave_analytics = LeaveWorkflowEngine.get_analytics()
+    chat_analytics = ChatEscalationEngine.get_analytics()
+    
     return {
         "total_employees": len(employees),
         "pending_leaves": len(pending_leaves),
-        "active_escalations": len(all_escalations)
+        "active_escalations": len(all_escalations),
+        "avg_resolution_time": leave_analytics.get("avg_resolution_time", 0),
+        "resolution_rate": leave_analytics.get("resolution_rate", 0),
+        "hr_hours_saved": chat_analytics.get("hr_hours_saved", 0),
+        "avg_escalation_time": chat_analytics.get("avg_escalation_time", 0)
     }
 
 

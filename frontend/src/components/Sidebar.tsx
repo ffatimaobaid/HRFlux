@@ -4,12 +4,12 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  MessageSquare, 
-  Calendar, 
-  User, 
-  LogOut, 
-  Bell, 
+import {
+  MessageSquare,
+  Calendar,
+  User,
+  LogOut,
+  Bell,
   Trash2,
   ChevronRight
 } from 'lucide-react';
@@ -52,11 +52,10 @@ export default function Sidebar({ onClearChat }: { onClearChat?: () => void }) {
               <Link key={item.name} href={item.href}>
                 <motion.div
                   whileHover={{ x: 4 }}
-                  className={`flex items-center justify-between p-3 rounded-xl transition-all ${
-                    isActive 
-                      ? 'bg-[#7b2ff7] text-white shadow-lg shadow-indigo-200' 
+                  className={`flex items-center justify-between p-3 rounded-xl transition-all ${isActive
+                      ? 'bg-[#7b2ff7] text-white shadow-lg shadow-indigo-200'
                       : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     {item.icon}
@@ -80,7 +79,7 @@ export default function Sidebar({ onClearChat }: { onClearChat?: () => void }) {
             Clear Chat
           </button>
         )}
-        
+
         <button
           onClick={logout}
           className="w-full flex items-center gap-3 p-3 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all text-sm font-semibold"
@@ -88,9 +87,9 @@ export default function Sidebar({ onClearChat }: { onClearChat?: () => void }) {
           <LogOut size={20} />
           Logout
         </button>
-        
+
         <div className="pt-4 border-t border-gray-100 text-center">
-          <p className="text-[10px] text-gray-400 font-medium">© 2024 HRFLUX SYSTEM</p>
+          <p className="text-[10px] text-gray-400 font-medium">HRFLUX SYSTEM</p>
         </div>
       </div>
     </aside>
