@@ -16,7 +16,9 @@ class AuthManager:
     def __init__(self):
         self.login_attempts = {}
         self.sessions = {}
-        self.session_file = "sessions.json"
+        # Ensure session file is always in the same directory as this script
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.session_file = os.path.join(base_dir, "sessions.json")
         self.load_sessions()
     
     def load_sessions(self):

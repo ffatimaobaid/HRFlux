@@ -6,6 +6,7 @@ import os
 from embedder import model  # For embeddings
 import numpy as np
 import time
+import requests
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 # FAQ Questions for suggestions
@@ -51,6 +52,74 @@ def get_similar_questions(user_query, faq_questions=FAQ_QUESTIONS, top_n=3):
     except Exception as e:
         print(f"Warning in suggestion engine: {e}")
         return faq_questions[:top_n]
+
+def query_ollama(messages):
+    """
+    Directly query Ollama API via requests (OpenAI-compatible).
+    Used as a tertiary fallback.
+    """
+    from config import OLLAMA_API_KEY, OLLAMA_MODEL, OLLAMA_BASE_URL
+    import json
+
+    print(f"Attempting query via Ollama ({OLLAMA_MODEL})...")
+    
+    headers = {
+        "Authorization": f"Bearer {OLLAMA_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    
+    # Map LangChain message types to OpenAI format
+    formatted_messages = []
+    for m in messages:
+        role = "user"
+        if hasattr(m, "type"):
+            role = "system" if m.type == "system" else "assistant" if m.type == "ai" else "user"
+        formatted_messages.append({"role": role, "content": m.content})
+    
+    payload = {
+        "model": OLLAMA_MODEL,
+        "messages": formatted_messages,
+        "temperature": 0.3
+    }
+    
+    try:
+        # Try OpenAI-compatible endpoint first
+        response = requests.post(
+            f"{OLLAMA_BASE_URL}/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=60
+        )
+        
+        # If /v1/chat/completions fails with 404, try Ollama's native /api/chat
+        if response.status_code == 404:
+            print("🔄 /v1/chat/completions not found, trying native Ollama /api/chat...")
+            native_payload = {
+                "model": OLLAMA_MODEL,
+                "messages": formatted_messages,
+                "stream": False,
+                "options": {"temperature": 0.3}
+            }
+            response = requests.post(
+                f"{OLLAMA_BASE_URL}/api/chat",
+                headers=headers,
+                json=native_payload,
+                timeout=60
+            )
+            
+        response.raise_for_status()
+        result = response.json()
+        
+        if "choices" in result: # OpenAI format
+            return result["choices"][0]["message"]["content"].strip()
+        elif "message" in result: # Ollama format
+            return result["message"]["content"].strip()
+        else:
+            raise Exception(f"Unexpected Ollama response format: {result}")
+            
+    except Exception as e:
+        print(f"Ollama request failed: {e}")
+        raise e
 
 def query_gemini_with_retry(context_chunks, question, model_name="gemini-2.0-flash", chat_history=None, hr_knowledge=None, max_retries=5):
     """
@@ -116,7 +185,12 @@ def query_gemini_with_retry(context_chunks, question, model_name="gemini-2.0-fla
                 time.sleep(2)
                 continue
             else:
-                return f"Gemini Error: {error_str}", False
+                print(f"⚠️ Gemini exhausted. Final fallback to Ollama...")
+                try:
+                    ollama_response = query_ollama(messages)
+                    return ollama_response, True
+                except Exception as ollama_e:
+                    return f"All LLMs (Groq, Gemini, Ollama) failed. Ollama error: {ollama_e}", False
 
 class ChatGoogleGenerativeAIWithRotation(ChatGoogleGenerativeAI):
     """Subclass that always uses the current Gemini key from rotation."""
