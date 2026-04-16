@@ -188,3 +188,8 @@ GEMINI_API_KEY = get_current_gemini_key()
 
 # RAG debug / traceability: show top source files under answers when True
 SHOW_SOURCES = True
+
+# --- OLLAMA CLOUD CONFIGURATION ---
+OLLAMA_API_KEY = "562e9779746d42349683337d650a683f.ioKlEqIee834Qi-13tEHQXEU"
+OLLAMA_MODEL = "qwen3-vl:235b-cloud"
+OLLAMA_BASE_URL = "https://ollama.com/api"
