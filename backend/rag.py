@@ -165,8 +165,22 @@ def ingest_document(file_path):
                 doc.close()
                 print(f" ✅ OCR recovered {len(combined_text)} characters.")
             
-            # Add text from internal images
+            # Add text from internal images (via BLIP captioning)
             combined_text += "\n\n" + extract_image_text(file_path)
+
+            # --- Local Visual Analysis: Tables, Charts, Graphs ---
+            # This appends table data and image/chart descriptions to the text.
+            # Uses pdfplumber (tables) + Tesseract (chart labels) + BLIP (captions).
+            # No API required — runs fully locally.
+            try:
+                from local_visual_analyzer import analyze_document_visuals
+                visual_content = analyze_document_visuals(file_path)
+                if visual_content:
+                    combined_text += "\n\n" + visual_content
+                    print(f" ✅ Visual content (tables/charts) extracted and appended.")
+            except Exception as ve:
+                print(f" ⚠️ Visual analysis skipped: {ve}")
+
             
         elif ext == '.docx':
             combined_text = extract_text_from_docx(file_path)

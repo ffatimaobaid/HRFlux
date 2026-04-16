@@ -119,13 +119,6 @@ function PdfDownloadCard({ filename, url }: { filename: string; url: string }) {
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
 
-  // Strict lockdown: Never show employee dashboard to an admin
-  if (authLoading || (user && user.role !== 'employee')) {
-    return <div className="h-screen bg-[#f8f9ff] flex items-center justify-center">
-      <div className="w-8 h-8 border-4 border-[#7b2ff7] border-t-transparent rounded-full animate-spin" />
-    </div>;
-  }
-
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -173,6 +166,15 @@ export default function Dashboard() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Strict lockdown: Never show employee dashboard to an admin
+  if (authLoading || (user && user.role !== 'employee')) {
+    return (
+      <div className="h-screen bg-[#f8f9ff] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#7b2ff7] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const getDismissedIds = (): Set<number> => {
     try {

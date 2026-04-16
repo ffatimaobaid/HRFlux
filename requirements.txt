@@ -57,3 +57,6 @@ jinja2
 langgraph
 langchain-groq
 apscheduler
+pi-heif
+pdfplumber
+# Tesseract-OCR (system dependency - installed via Chocolatey: choco install tesseract)

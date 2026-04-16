@@ -96,7 +96,7 @@ def validate_hr_query(question: str, history: List[Dict[str, str]] = None) -> tu
         # Meetings & scheduling
         "meeting", "schedule", "calendar", "appointment",
         # Balance / history queries
-        "balance", "remaining", "how many days", "leave history",
+        "balance", "remaining", "how many days", "leave history", "pie chart", "chart", "graph", "total count", "categories", "dashboards"
     ]
     q_lower = question.lower()
     if any(kw in q_lower for kw in HR_KEYWORDS):
