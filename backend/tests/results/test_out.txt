@@ -1,0 +1,385 @@
+﻿..\venv\Scripts\python.exe
+ : Warning: You are 
+sending unauthenticated 
+requests to the HF Hub. 
+Please set a HF_TOKEN to 
+enable higher rate limits 
+and faster downloads.
+At line:1 char:1
++ ..\venv\Scripts\python.e
+xe -m unittest tests/test_
+module3_hr_agent_la ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (W  
+  arning: You ar...ster   
+  downloads.:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+
+Loading weights:   0%|    
+      | 0/103 [00:00<?, 
+?it/s]
+Loading weights: 
+100%|##########| 103/103 
+[00:00<00:00, 4666.18it/s]
+[1mBertModel LOAD 
+REPORT[0m from: sentence-
+transformers/all-MiniLM-L6
+-v2
+Key                     | 
+Status     |  | 
+------------------------+-
+-----------+--+-
+embeddings.position_ids | 
+UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be 
+ignored when loading from 
+different 
+task/architecture; not ok 
+if you expect identical 
+arch.[0m
+
+Loading weights:   0%|    
+      | 0/473 [00:00<?, 
+?it/s]
+Loading weights: 
+100%|##########| 473/473 
+[00:00<00:00, 
+11251.73it/s]
+The tied weights mapping 
+and config for this model 
+specifies to tie text_deco
+der.cls.predictions.bias 
+to text_decoder.cls.predic
+tions.decoder.bias, but 
+both are present in the 
+checkpoints, so we will 
+NOT tie them. You should 
+update the config with `ti
+e_word_embeddings=False` 
+to silence this warning
+The tied weights mapping 
+and config for this model 
+specifies to tie text_deco
+der.bert.embeddings.word_e
+mbeddings.weight to text_d
+ecoder.cls.predictions.dec
+oder.weight, but both are 
+present in the 
+checkpoints, so we will 
+NOT tie them. You should 
+update the config with `ti
+e_word_embeddings=False` 
+to silence this warning
+[1mBlipForConditionalGene
+ration LOAD REPORT[0m 
+from: Salesforce/blip-imag
+e-captioning-base
+Key                       
+                | Status  
+   |  | 
+--------------------------
+----------------+---------
+---+--+-
+text_decoder.bert.embeddin
+gs.position_ids | 
+UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be 
+ignored when loading from 
+different 
+task/architecture; not ok 
+if you expect identical 
+arch.[0m
+EEEEEEE
+==========================
+==========================
+==================
+ERROR: 
+test_docubot_generate_noc 
+(tests.test_module3_hr_age
+nt_layer.TestModule3HRAgen
+tLayer)
+Test DocuBot: generating 
+NOC document
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Program Files\P
+ython310\lib\unittest\mock
+.py", line 1376, in 
+patched
+    with self.decoration_h
+elper(patched,
+  File "C:\Program Files\P
+ython310\lib\contextlib.py
+", line 135, in __enter__
+    return next(self.gen)
+  File "C:\Program Files\P
+ython310\lib\unittest\mock
+.py", line 1358, in 
+decoration_helper
+    arg = exit_stack.enter
+_context(patching)
+  File "C:\Program Files\P
+ython310\lib\contextlib.py
+", line 492, in 
+enter_context
+    result = 
+_cm_type.__enter__(cm)
+  File "C:\Program Files\P
+ython310\lib\unittest\mock
+.py", line 1447, in 
+__enter__
+    original, local = 
+self.get_original()
+  File "C:\Program Files\P
+ython310\lib\unittest\mock
+.py", line 1420, in 
+get_original
+    raise AttributeError(
+AttributeError: <module 
+'docu_tools' from 'C:\\Use
+rs\\HP\\Desktop\\hrflux\\H
+RFLUX\\backend\\docu_tools
+.py'> does not have the 
+attribute 'FWPDF'
+
+==========================
+==========================
+==================
+ERROR: test_docubot_genera
+te_salary_cert (tests.test
+_module3_hr_agent_layer.Te
+stModule3HRAgentLayer)
+Test DocuBot: generating 
+Salary Certificate
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Program Files\P
+ython310\lib\unittest\mock
+.py", line 1376, in 
+patched
+    with self.decoration_h
+elper(patched,
+  File "C:\Program Files\P
+ython310\lib\contextlib.py
+", line 135, in __enter__
+    return next(self.gen)
+  File "C:\Program Files\P
+ython310\lib\unittest\mock
+.py", line 1358, in 
+decoration_helper
+    arg = exit_stack.enter
+_context(patching)
+  File "C:\Program Files\P
+ython310\lib\contextlib.py
+", line 492, in 
+enter_context
+    result = 
+_cm_type.__enter__(cm)
+  File "C:\Program Files\P
+ython310\lib\unittest\mock
+.py", line 1447, in 
+__enter__
+    original, local = 
+self.get_original()
+  File "C:\Program Files\P
+ython310\lib\unittest\mock
+.py", line 1420, in 
+get_original
+    raise AttributeError(
+AttributeError: <module 
+'docu_tools' from 'C:\\Use
+rs\\HP\\Desktop\\hrflux\\H
+RFLUX\\backend\\docu_tools
+.py'> does not have the 
+attribute 'FWPDF'
+
+==========================
+==========================
+==================
+ERROR: test_escalation_bot
+_file_escalation (tests.te
+st_module3_hr_agent_layer.
+TestModule3HRAgentLayer)
+Test EscalationBot: 
+Filing a new escalation 
+ticket
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\te
+sts\test_module3_hr_agent_
+layer.py", line 155, in te
+st_escalation_bot_file_esc
+alation
+    response = escalation_
+tools.tool_file_escalation
+(
+TypeError: 
+'StructuredTool' object 
+is not callable
+
+==========================
+==========================
+==================
+ERROR: test_escalation_bot
+_resolve_and_notify (tests
+.test_module3_hr_agent_lay
+er.TestModule3HRAgentLayer
+)
+Test EscalationBot: 
+Resolving an escalation 
+sends notification
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\te
+sts\test_module3_hr_agent_
+layer.py", line 190, in te
+st_escalation_bot_resolve_
+and_notify
+    esc_id = 
+c.fetchone()[0]
+TypeError: 'NoneType' 
+object is not 
+subscriptable
+
+==========================
+==========================
+==================
+ERROR: test_leave_bot_appl
+y_leave (tests.test_module
+3_hr_agent_layer.TestModul
+e3HRAgentLayer)
+Test LeaveBot: apply for 
+leave
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\te
+sts\test_module3_hr_agent_
+layer.py", line 87, in 
+test_leave_bot_apply_leave
+    response = leave_bot_t
+ools.tool_apply_leave(
+AttributeError: module 
+'leave_bot_tools' has no 
+attribute 
+'tool_apply_leave'
+
+==========================
+==========================
+==================
+ERROR: test_leave_bot_chec
+k_balance (tests.test_modu
+le3_hr_agent_layer.TestMod
+ule3HRAgentLayer)
+Test LeaveBot: checking 
+leave balance
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\te
+sts\test_module3_hr_agent_
+layer.py", line 77, in tes
+t_leave_bot_check_balance
+    response = leave_bot_t
+ools.tool_check_leave_bala
+nce(self.username)
+AttributeError: module 
+'leave_bot_tools' has no 
+attribute 'tool_check_leav
+e_balance'. Did you mean: 
+'tool_get_leave_balance'?
+
+==========================
+==========================
+==================
+ERROR: 
+test_policy_bot_retrieval 
+(tests.test_module3_hr_age
+nt_layer.TestModule3HRAgen
+tLayer)
+Test PolicyBot: RAG 
+mechanism mocked behavior
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Program Files\P
+ython310\lib\unittest\mock
+.py", line 1376, in 
+patched
+    with self.decoration_h
+elper(patched,
+  File "C:\Program Files\P
+ython310\lib\contextlib.py
+", line 135, in __enter__
+    return next(self.gen)
+  File "C:\Program Files\P
+ython310\lib\unittest\mock
+.py", line 1358, in 
+decoration_helper
+    arg = exit_stack.enter
+_context(patching)
+  File "C:\Program Files\P
+ython310\lib\contextlib.py
+", line 492, in 
+enter_context
+    result = 
+_cm_type.__enter__(cm)
+  File "C:\Program Files\P
+ython310\lib\unittest\mock
+.py", line 1447, in 
+__enter__
+    original, local = 
+self.get_original()
+  File "C:\Program Files\P
+ython310\lib\unittest\mock
+.py", line 1420, in 
+get_original
+    raise AttributeError(
+AttributeError: <module 
+'rag' from 'C:\\Users\\HP\
+\Desktop\\hrflux\\HRFLUX\\
+backend\\rag.py'> does 
+not have the attribute 
+'semantic_search'
+
+--------------------------
+--------------------------
+------------------
+Ran 7 tests in 0.673s
+
+FAILED (errors=7)
+Warning: Could not add time fields to employee_tasks table: no such table: employee_tasks
+Enhanced database schema created successfully!

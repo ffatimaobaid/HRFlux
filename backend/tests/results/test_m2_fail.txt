@@ -1,0 +1,133 @@
+﻿python : Traceback (most 
+recent call last):
+At line:1 char:1
++ python -m unittest tests
+/test_module2_knowledge_ba
+se.py 2>&1 | Out-Fi ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (T  
+  raceback (most recent   
+  call last)::String)     
+[], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+  File "C:\Program Files\P
+ython310\lib\runpy.py", 
+line 196, in 
+_run_module_as_main
+    return 
+_run_code(code, 
+main_globals, None,
+  File "C:\Program Files\P
+ython310\lib\runpy.py", 
+line 86, in _run_code
+    exec(code, 
+run_globals)
+  File "C:\Program Files\P
+ython310\lib\unittest\__ma
+in__.py", line 18, in 
+<module>
+    main(module=None)
+  File "C:\Program Files\P
+ython310\lib\unittest\main
+.py", line 100, in 
+__init__
+    self.parseArgs(argv)
+  File "C:\Program Files\P
+ython310\lib\unittest\main
+.py", line 147, in 
+parseArgs
+    self.createTests()
+  File "C:\Program Files\P
+ython310\lib\unittest\main
+.py", line 158, in 
+createTests
+    self.test = self.testL
+oader.loadTestsFromNames(s
+elf.testNames,
+  File "C:\Program Files\P
+ython310\lib\unittest\load
+er.py", line 220, in 
+loadTestsFromNames
+    suites = [self.loadTes
+tsFromName(name, module) 
+for name in names]
+  File "C:\Program Files\P
+ython310\lib\unittest\load
+er.py", line 220, in 
+<listcomp>
+    suites = [self.loadTes
+tsFromName(name, module) 
+for name in names]
+  File "C:\Program Files\P
+ython310\lib\unittest\load
+er.py", line 154, in 
+loadTestsFromName
+    module = 
+__import__(module_name)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\te
+sts\test_module2_knowledge
+_base.py", line 28, in 
+<module>
+    import vector_store
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ve
+ctor_store.py", line 2, 
+in <module>
+    import chromadb
+  File "C:\Users\HP\AppDat
+a\Roaming\Python\Python310
+\site-packages\chromadb\__
+init__.py", line 3, in 
+<module>
+    from 
+chromadb.api.client 
+import Client as 
+ClientCreator
+  File "C:\Users\HP\AppDat
+a\Roaming\Python\Python310
+\site-packages\chromadb\ap
+i\__init__.py", line 7, 
+in <module>
+    from chromadb.api.mode
+ls.Collection import 
+Collection
+  File "C:\Users\HP\AppDat
+a\Roaming\Python\Python310
+\site-packages\chromadb\ap
+i\models\Collection.py", 
+line 7, in <module>
+    import chromadb.utils.
+embedding_functions as ef
+  File "C:\Users\HP\AppDat
+a\Roaming\Python\Python310
+\site-packages\chromadb\ut
+ils\embedding_functions.py
+", line 7, in <module>
+    from 
+chromadb.api.types import 
+(
+  File "C:\Users\HP\AppDat
+a\Roaming\Python\Python310
+\site-packages\chromadb\ap
+i\types.py", line 102, in 
+<module>
+    ImageDType = 
+Union[np.uint, np.int_, 
+np.float_]
+  File "C:\Users\HP\AppDat
+a\Roaming\Python\Python310
+\site-packages\numpy\__ini
+t__.py", line 413, in 
+__getattr__
+    raise AttributeError(
+AttributeError: 
+`np.float_` was removed 
+in the NumPy 2.0 release. 
+Use `np.float64` instead.

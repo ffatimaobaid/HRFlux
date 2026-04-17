@@ -423,9 +423,9 @@ async def process_leave_approval(request: Request, approval: LeaveApprovalReques
     return result
 
 @app.post("/api/leave-approval")
-async def process_leave_approval_alt(approval: LeaveApprovalRequest, token: str = Depends(verify_token)):
+async def process_leave_approval_alt(request: Request, approval: LeaveApprovalRequest, token: str = Depends(verify_token)):
     """Approve or reject a leave request (alternative endpoint for compatibility)."""
-    return await process_leave_approval(approval, token)
+    return await process_leave_approval(request, approval, token)
 
 @app.get("/api/leave-request/{request_id}")
 async def get_leave_request(request_id: int, token: str = Depends(verify_token)):

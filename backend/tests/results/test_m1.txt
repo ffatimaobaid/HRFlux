@@ -1,0 +1,58 @@
+﻿python : .........F.s...ss
+At line:1 char:1
++ python -m unittest tests
+/test_module1_database.py 
+2>&1 | Out-File -En ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~
+    + CategoryInfo        
+      : NotSpecified: (.  
+  ........F.s...ss:Stri   
+ ng) [], RemoteExcepti    
+on
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+==========================
+==========================
+==================
+FAIL: test_employee_hierar
+chy_relationships (tests.t
+est_module1_database.TestM
+odule1DatabaseManagement)
+Test 1.5: Test 
+manager-employee 
+relationships
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\te
+sts\test_module1_database.
+py", line 184, in test_emp
+loyee_hierarchy_relationsh
+ips
+    self.assertEqual(manag
+er_id, "MGR001", "Manager 
+relationship should be 
+preserved")
+AssertionError: None != 
+'MGR001' : Manager 
+relationship should be 
+preserved
+
+--------------------------
+--------------------------
+------------------
+Ran 17 tests in 0.635s
+
+FAILED (failures=1, 
+skipped=3)
+Error adding employee: UNIQUE constraint failed: employees.employee_id
+Migrated users to employees table
+Migrated leave requests to enhanced table
+Error adding employee: UNIQUE constraint failed: employees.employee_id

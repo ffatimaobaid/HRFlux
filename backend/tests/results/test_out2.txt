@@ -1,0 +1,174 @@
+﻿..\venv\Scripts\python.exe
+ : Warning: You are 
+sending unauthenticated 
+requests to the HF Hub. 
+Please set a HF_TOKEN to 
+enable higher rate limits 
+and faster downloads.
+At line:1 char:1
++ ..\venv\Scripts\python.e
+xe -m unittest tests/test_
+module3_hr_agent_la ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (W  
+  arning: You ar...ster   
+  downloads.:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+
+Loading weights:   0%|    
+      | 0/103 [00:00<?, 
+?it/s]
+Loading weights: 
+100%|##########| 103/103 
+[00:00<00:00, 5154.37it/s]
+[1mBertModel LOAD 
+REPORT[0m from: sentence-
+transformers/all-MiniLM-L6
+-v2
+Key                     | 
+Status     |  | 
+------------------------+-
+-----------+--+-
+embeddings.position_ids | 
+UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be 
+ignored when loading from 
+different 
+task/architecture; not ok 
+if you expect identical 
+arch.[0m
+
+Loading weights:   0%|    
+      | 0/473 [00:00<?, 
+?it/s]
+Loading weights: 
+100%|##########| 473/473 
+[00:00<00:00, 
+10777.88it/s]
+The tied weights mapping 
+and config for this model 
+specifies to tie text_deco
+der.cls.predictions.bias 
+to text_decoder.cls.predic
+tions.decoder.bias, but 
+both are present in the 
+checkpoints, so we will 
+NOT tie them. You should 
+update the config with `ti
+e_word_embeddings=False` 
+to silence this warning
+The tied weights mapping 
+and config for this model 
+specifies to tie text_deco
+der.bert.embeddings.word_e
+mbeddings.weight to text_d
+ecoder.cls.predictions.dec
+oder.weight, but both are 
+present in the 
+checkpoints, so we will 
+NOT tie them. You should 
+update the config with `ti
+e_word_embeddings=False` 
+to silence this warning
+[1mBlipForConditionalGene
+ration LOAD REPORT[0m 
+from: Salesforce/blip-imag
+e-captioning-base
+Key                       
+                | Status  
+   |  | 
+--------------------------
+----------------+---------
+---+--+-
+text_decoder.bert.embeddin
+gs.position_ids | 
+UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be 
+ignored when loading from 
+different 
+task/architecture; not ok 
+if you expect identical 
+arch.[0m
+Error fetching employee 
+data: int() argument must 
+be a string, a bytes-like 
+object or a real number, 
+not 'NoneType'
+...EF..
+==========================
+==========================
+==================
+ERROR: test_escalation_bot
+_resolve_and_notify (tests
+.test_module3_hr_agent_lay
+er.TestModule3HRAgentLayer
+)
+Test EscalationBot: 
+Resolving an escalation 
+sends notification
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\te
+sts\test_module3_hr_agent_
+layer.py", line 188, in te
+st_escalation_bot_resolve_
+and_notify
+    esc_id = 
+c.fetchone()[0]
+TypeError: 'NoneType' 
+object is not 
+subscriptable
+
+==========================
+==========================
+==================
+FAIL: test_leave_bot_apply
+_leave (tests.test_module3
+_hr_agent_layer.TestModule
+3HRAgentLayer)
+Test LeaveBot: apply for 
+leave
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\te
+sts\test_module3_hr_agent_
+layer.py", line 105, in 
+test_leave_bot_apply_leave
+    
+self.assertIsNotNone(req)
+AssertionError: 
+unexpectedly None
+
+--------------------------
+--------------------------
+------------------
+Ran 7 tests in 0.945s
+
+FAILED (failures=1, 
+errors=1)
+Warning: Could not add time fields to employee_tasks table: no such table: employee_tasks
+Enhanced database schema created successfully!
+
+[RAG] Retrieving hybrid context for query: remote work policy
+[keyword_search] Retrieved 0 chunks from DB
+[keyword_search] Query words: ['remote', 'work', 'policy']
+[keyword_search] Found 0 matching chunks

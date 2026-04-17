@@ -1,0 +1,1874 @@
+﻿..\venv\Scripts\python.exe
+ : Warning: You are 
+sending unauthenticated 
+requests to the HF Hub. 
+Please set a HF_TOKEN to 
+enable higher rate limits 
+and faster downloads.
+At line:1 char:1
++ ..\venv\Scripts\python.e
+xe -m unittest tests/test_
+module2_knowledge_b ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (W  
+  arning: You ar...ster   
+  downloads.:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+
+Loading weights:   0%|    
+      | 0/103 [00:00<?, 
+?it/s]
+Loading weights: 
+100%|##########| 103/103 
+[00:00<00:00, 1459.13it/s]
+[1mBertModel LOAD 
+REPORT[0m from: sentence-
+transformers/all-MiniLM-L6
+-v2
+Key                     | 
+Status     |  | 
+------------------------+-
+-----------+--+-
+embeddings.position_ids | 
+UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be 
+ignored when loading from 
+different 
+task/architecture; not ok 
+if you expect identical 
+arch.[0m
+
+Loading weights:   0%|    
+      | 0/473 [00:00<?, 
+?it/s]
+Loading weights:  
+37%|###6      | 173/473 
+[00:00<00:00, 1719.44it/s]
+Loading weights: 
+100%|##########| 473/473 
+[00:00<00:00, 2779.94it/s]
+The tied weights mapping 
+and config for this model 
+specifies to tie text_deco
+der.cls.predictions.bias 
+to text_decoder.cls.predic
+tions.decoder.bias, but 
+both are present in the 
+checkpoints, so we will 
+NOT tie them. You should 
+update the config with `ti
+e_word_embeddings=False` 
+to silence this warning
+The tied weights mapping 
+and config for this model 
+specifies to tie text_deco
+der.bert.embeddings.word_e
+mbeddings.weight to text_d
+ecoder.cls.predictions.dec
+oder.weight, but both are 
+present in the 
+checkpoints, so we will 
+NOT tie them. You should 
+update the config with `ti
+e_word_embeddings=False` 
+to silence this warning
+[1mBlipForConditionalGene
+ration LOAD REPORT[0m 
+from: Salesforce/blip-imag
+e-captioning-base
+Key                       
+                | Status  
+   |  | 
+--------------------------
+----------------+---------
+---+--+-
+text_decoder.bert.embeddin
+gs.position_ids | 
+UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be 
+ignored when loading from 
+different 
+task/architecture; not ok 
+if you expect identical 
+arch.[0m
+Enhanced database schema created successfully!
+2026-04-17 09:28:10,811 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2026-04-17 09:28:11,310 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-17 09:28:11,369 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-04-17 09:28:11,635 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-17 09:28:11,697 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-04-17 09:28:11,981 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-17 09:28:12,043 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+2026-04-17 09:28:12,323 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-04-17 09:28:12,401 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+2026-04-17 09:28:12,669 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-17 09:28:12,720 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+2026-04-17 09:28:12,991 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-17 09:28:13,048 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+2026-04-17 09:28:13,309 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+2026-04-17 09:28:13,568 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-17 09:28:13,618 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+
+Loading weights:   0%|    
+      | 0/103 [00:00<?, 
+?it/s]
+Loading weights: 
+100%|##########| 103/103 
+[00:00<00:00, 1883.84it/s]
+[1mBertModel LOAD 
+REPORT[0m from: sentence-
+transformers/all-MiniLM-L6
+-v2
+Key                     | 
+Status     |  | 
+------------------------+-
+-----------+--+-
+embeddings.position_ids | 
+UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be 
+ignored when loading from 
+different 
+task/architecture; not ok 
+if you expect identical 
+arch.[0m
+2026-04-17 09:28:14,080 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-17 09:28:14,135 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-04-17 09:28:14,396 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-17 09:28:14,454 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-17 09:28:14,726 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-17 09:28:15,009 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-17 09:28:15,438 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-17 09:28:15,488 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+2026-04-17 09:28:15,757 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+2026-04-17 09:28:16,264 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-17 09:28:16,327 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+2026-04-17 09:28:16,611 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-17 09:28:16,663 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+2026-04-17 09:28:16,941 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+2026-04-17 09:28:17,203 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+C:\Users\HP\Desktop\hrflux
+\HRFLUX\venv\lib\site-pack
+ages\httpx\_models.py:408:
+ DeprecationWarning: Use 
+'content=<...>' to upload 
+raw bytes/text content.
+  headers, stream = 
+encode_request(
+2026-04-17 09:28:17,414 - httpx - INFO - HTTP Request: POST http://testserver/api/leave-request "HTTP/1.1 422 Unprocessable Entity"
+2026-04-17 09:28:17,441 - httpx - INFO - HTTP Request: POST http://testserver/api/leave-request "HTTP/1.1 422 Unprocessable Entity"
+Enhanced database schema created successfully!
+2026-04-17 09:28:17,655 - httpx - INFO - HTTP Request: GET http://testserver/api/attendance/TEST001 "HTTP/1.1 200 OK"
+Enhanced database schema created successfully!
+Enhanced database schema created successfully!
+2026-04-17 09:28:18,009 - httpx - INFO - HTTP Request: GET http://testserver/api/employees/TEST001 "HTTP/1.1 200 OK"
+2026-04-17 09:28:18,021 - httpx - INFO - HTTP Request: GET http://testserver/api/employees/TEST001 "HTTP/1.1 200 OK"
+2026-04-17 09:28:18,031 - httpx - INFO - HTTP Request: GET http://testserver/api/employees/TEST001 "HTTP/1.1 200 OK"
+2026-04-17 09:28:18,036 - httpx - INFO - HTTP Request: GET http://testserver/api/employees/TEST001 "HTTP/1.1 200 OK"
+2026-04-17 09:28:18,060 - httpx - INFO - HTTP Request: GET http://testserver/api/employees/TEST001 "HTTP/1.1 200 OK"
+Enhanced database schema created successfully!
+....
+Batches:   0%|          | 
+0/1 [00:00<?, ?it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+1.23it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+1.23it/s]
+
+Batches:   0%|          | 
+0/1 [00:00<?, ?it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+3.05it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+3.04it/s]
+Enhanced database schema created successfully!
+.
+Batches:   0%|          | 
+0/1 [00:00<?, ?it/s]
+Batches: 100%|##########| 
+1/1 [00:01<00:00,  
+1.01s/it]
+Batches: 100%|##########| 
+1/1 [00:01<00:00,  
+1.01s/it]
+Enhanced database schema created successfully!
+E
+Batches:   0%|          | 
+0/1 [00:00<?, ?it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+3.68it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+3.66it/s]
+Enhanced database schema created successfully!
+.
+Batches:   0%|          | 
+0/1 [00:00<?, ?it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00, 
+10.28it/s]
+
+Batches:   0%|          | 
+0/1 [00:00<?, ?it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00, 
+16.35it/s]
+Enhanced database schema created successfully!
+2026-04-17 09:28:24,118 - httpx - INFO - HTTP Request: GET http://testserver/api/employees/TEST001 "HTTP/1.1 200 OK"
+Enhanced database schema created successfully!
+..
+Batches:   0%|          | 
+0/1 [00:00<?, ?it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+2.62it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+2.59it/s]
+2026-04-17 09:28:25,274 - notifications - INFO - Created info notification for HR_MANAGER: New Leave Request
+2026-04-17 09:28:25,303 - httpx - INFO - HTTP Request: POST http://testserver/api/leave-request "HTTP/1.1 201 Created"
+
+Batches:   0%|          | 
+0/1 [00:00<?, ?it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+3.44it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+3.43it/s]
+Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\errors.py", line 
+164, in __call__
+    await self.app(scope, 
+receive, _send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\cors.py", line 
+87, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+191, in __call__
+    with recv_stream, 
+send_stream, 
+collapse_excgroups():
+  File "C:\Program Files\P
+ython310\lib\contextlib.py
+", line 153, in __exit__
+    self.gen.throw(typ, 
+value, traceback)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ut
+ils.py", line 87, in 
+collapse_excgroups
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+193, in __call__
+    response = await self.
+dispatch_func(request, 
+call_next)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 87, in 
+dispatch
+    response = await 
+call_next(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+168, in call_next
+    raise app_exc from 
+app_exc.__cause__ or 
+app_exc.__context__
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+144, in coro
+    await self.app(scope, 
+receive_or_disconnect, 
+send_no_error)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\exceptions.py", 
+line 63, in __call__
+    await wrap_app_handlin
+g_exceptions(self.app, 
+conn)(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+53, in wrapped_app
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\middl
+eware\asyncexitstack.py", 
+line 18, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 716, in 
+__call__
+    await self.middleware_
+stack(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 736, in app
+    await 
+route.handle(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 290, in 
+handle
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 130, in app
+    await wrap_app_handlin
+g_exceptions(app, 
+request)(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+53, in wrapped_app
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 116, in app
+    response = await 
+f(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 670, in app
+    raw_response = await 
+run_endpoint_function(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 324, in 
+run_endpoint_function
+    return await 
+dependant.call(**values)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 428, in 
+process_leave_approval_alt
+    return await process_l
+eave_approval(approval, 
+token)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 389, in 
+process_leave_approval
+    if approval.action == 
+'approve':
+AttributeError: 'str' 
+object has no attribute 
+'action'
+CRITICAL ERROR: 'str' object has no attribute 'action'
+Enhanced database schema created successfully!
+Enhanced database schema created successfully!
+2026-04-17 09:28:26,860 - notifications - INFO - Created info notification for HR_MANAGER: New Leave Request
+2026-04-17 09:28:26,884 - httpx - INFO - HTTP Request: POST http://testserver/api/leave-request "HTTP/1.1 201 Created"
+E.Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\errors.py", line 
+164, in __call__
+    await self.app(scope, 
+receive, _send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\cors.py", line 
+87, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+191, in __call__
+    with recv_stream, 
+send_stream, 
+collapse_excgroups():
+  File "C:\Program Files\P
+ython310\lib\contextlib.py
+", line 153, in __exit__
+    self.gen.throw(typ, 
+value, traceback)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ut
+ils.py", line 87, in 
+collapse_excgroups
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+193, in __call__
+    response = await self.
+dispatch_func(request, 
+call_next)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 87, in 
+dispatch
+    response = await 
+call_next(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+168, in call_next
+    raise app_exc from 
+app_exc.__cause__ or 
+app_exc.__context__
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+144, in coro
+    await self.app(scope, 
+receive_or_disconnect, 
+send_no_error)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\exceptions.py", 
+line 63, in __call__
+    await wrap_app_handlin
+g_exceptions(self.app, 
+conn)(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+53, in wrapped_app
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\middl
+eware\asyncexitstack.py", 
+line 18, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 716, in 
+__call__
+    await self.middleware_
+stack(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 736, in app
+    await 
+route.handle(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 290, in 
+handle
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 130, in app
+    await wrap_app_handlin
+g_exceptions(app, 
+request)(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+53, in wrapped_app
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 116, in app
+    response = await 
+f(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 670, in app
+    raw_response = await 
+run_endpoint_function(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 324, in 
+run_endpoint_function
+    return await 
+dependant.call(**values)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 428, in 
+process_leave_approval_alt
+    return await process_l
+eave_approval(approval, 
+token)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 389, in 
+process_leave_approval
+    if approval.action == 
+'approve':
+AttributeError: 'str' 
+object has no attribute 
+'action'
+CRITICAL ERROR: 'str' object has no attribute 'action'
+Enhanced database schema created successfully!
+2026-04-17 09:28:27,760 - httpx - INFO - HTTP Request: GET http://testserver/api/leave-balance/TEST001 "HTTP/1.1 200 OK"
+Enhanced database schema created successfully!
+2026-04-17 09:28:28,352 - notifications - INFO - Created info notification for HR_MANAGER: New Leave Request
+2026-04-17 09:28:28,402 - httpx - INFO - HTTP Request: POST http://testserver/api/leave-request "HTTP/1.1 201 Created"
+E.Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\errors.py", line 
+164, in __call__
+    await self.app(scope, 
+receive, _send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\cors.py", line 
+87, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+191, in __call__
+    with recv_stream, 
+send_stream, 
+collapse_excgroups():
+  File "C:\Program Files\P
+ython310\lib\contextlib.py
+", line 153, in __exit__
+    self.gen.throw(typ, 
+value, traceback)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ut
+ils.py", line 87, in 
+collapse_excgroups
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+193, in __call__
+    response = await self.
+dispatch_func(request, 
+call_next)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 87, in 
+dispatch
+    response = await 
+call_next(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+168, in call_next
+    raise app_exc from 
+app_exc.__cause__ or 
+app_exc.__context__
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+144, in coro
+    await self.app(scope, 
+receive_or_disconnect, 
+send_no_error)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\exceptions.py", 
+line 63, in __call__
+    await wrap_app_handlin
+g_exceptions(self.app, 
+conn)(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+53, in wrapped_app
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\middl
+eware\asyncexitstack.py", 
+line 18, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 716, in 
+__call__
+    await self.middleware_
+stack(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 736, in app
+    await 
+route.handle(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 290, in 
+handle
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 130, in app
+    await wrap_app_handlin
+g_exceptions(app, 
+request)(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+53, in wrapped_app
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 116, in app
+    response = await 
+f(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 670, in app
+    raw_response = await 
+run_endpoint_function(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 324, in 
+run_endpoint_function
+    return await 
+dependant.call(**values)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 428, in 
+process_leave_approval_alt
+    return await process_l
+eave_approval(approval, 
+token)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 389, in 
+process_leave_approval
+    if approval.action == 
+'approve':
+AttributeError: 'str' 
+object has no attribute 
+'action'
+CRITICAL ERROR: 'str' object has no attribute 'action'
+Enhanced database schema created successfully!
+2026-04-17 09:28:28,898 - notifications - INFO - Created info notification for HR_MANAGER: New Leave Request
+2026-04-17 09:28:28,902 - httpx - INFO - HTTP Request: POST http://testserver/api/leave-request "HTTP/1.1 201 Created"
+Enhanced database schema created successfully!
+2026-04-17 09:28:29,070 - httpx - INFO - HTTP Request: POST http://testserver/api/leave-request "HTTP/1.1 400 Bad Request"
+2026-04-17 09:28:29,110 - httpx - INFO - HTTP Request: POST http://testserver/api/leave-request "HTTP/1.1 400 Bad Request"
+Enhanced database schema created successfully!
+2026-04-17 09:28:29,242 - httpx - INFO - HTTP Request: GET http://testserver/api/employees/NONEXISTENT "HTTP/1.1 404 Not Found"
+2026-04-17 09:28:29,269 - httpx - INFO - HTTP Request: GET http://testserver/api/leave-balance/NONEXISTENT "HTTP/1.1 404 Not Found"
+Enhanced database schema created successfully!
+Enhanced database schema created successfully!
+Enhanced database schema created successfully!
+Enhanced database schema created successfully!
+E.....E
+Batches:   0%|          | 
+0/1 [00:00<?, ?it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+3.13it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+3.13it/s]
+
+Batches:   0%|          | 
+0/1 [00:00<?, ?it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+3.56it/s]
+Batches: 100%|##########| 
+1/1 [00:00<00:00,  
+3.56it/s]
+.
+==========================
+==========================
+==================
+ERROR: test_document_delet
+ion_from_vector_db (tests.
+test_module2_knowledge_bas
+e.TestModule2KnowledgeBase
+)
+Test 1.4: Document 
+deletion from vector 
+database
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ve
+ctor_store.py", line 68, 
+in 
+delete_document_embeddings
+    print(f"[\u2705] 
+Deleted 
+{len(ids_to_delete)} 
+chunks for {doc_id}")
+  File "C:\Program Files\P
+ython310\lib\encodings\cp1
+252.py", line 19, in 
+encode
+    return codecs.charmap_
+encode(input,self.errors,e
+ncoding_table)[0]
+UnicodeEncodeError: 
+'charmap' codec can't 
+encode character '\u2705' 
+in position 1: character 
+maps to <undefined>
+
+During handling of the 
+above exception, another 
+exception occurred:
+
+Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\te
+sts\test_module2_knowledge
+_base.py", line 228, in te
+st_document_deletion_from_
+vector_db
+    vector_store.delete_do
+cument_embeddings(doc_id)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ve
+ctor_store.py", line 72, 
+in 
+delete_document_embeddings
+    print(f"[\u274c] 
+Error deleting document 
+{doc_id}: {e}")
+  File "C:\Program Files\P
+ython310\lib\encodings\cp1
+252.py", line 19, in 
+encode
+    return codecs.charmap_
+encode(input,self.errors,e
+ncoding_table)[0]
+UnicodeEncodeError: 
+'charmap' codec can't 
+encode character '\u274c' 
+in position 1: character 
+maps to <undefined>
+
+==========================
+==========================
+==================
+ERROR: test_end_to_end_lea
+ve_workflow (tests.test_mo
+dule2_knowledge_base.TestM
+odule2KnowledgeBase)
+Test 6.1: End-to-end 
+leave workflow with 
+knowledge base
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\te
+sts\test_module2_knowledge
+_base.py", line 557, in te
+st_end_to_end_leave_workfl
+ow
+    response = self.client
+.post("/api/leave-approval
+", json=approval_data)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\tes
+tclient.py", line 546, in 
+post
+    return super().post(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 1144, in post
+    return self.request(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\tes
+tclient.py", line 445, in 
+request
+    return 
+super().request(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 825, in request
+    return 
+self.send(request, 
+auth=auth, follow_redirect
+s=follow_redirects)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 914, in send
+    response = 
+self._send_handling_auth(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 942, in 
+_send_handling_auth
+    response = self._send_
+handling_redirects(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 979, in 
+_send_handling_redirects
+    response = self._send_
+single_request(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 1014, in 
+_send_single_request
+    response = transport.h
+andle_request(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\tes
+tclient.py", line 348, in 
+handle_request
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\tes
+tclient.py", line 345, in 
+handle_request
+    portal.call(self.app, 
+scope, receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\anyio\from_th
+read.py", line 334, in 
+call
+    return cast(T_Retval, 
+self.start_task_soon(func,
+ *args).result())
+  File "C:\Program Files\P
+ython310\lib\concurrent\fu
+tures\_base.py", line 
+458, in result
+    return 
+self.__get_result()
+  File "C:\Program Files\P
+ython310\lib\concurrent\fu
+tures\_base.py", line 
+403, in __get_result
+    raise self._exception
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\anyio\from_th
+read.py", line 259, in 
+_call_func
+    retval = await 
+retval_or_awaitable
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\appli
+cations.py", line 1160, 
+in __call__
+    await 
+super().__call__(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\app
+lications.py", line 107, 
+in __call__
+    await self.middleware_
+stack(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\errors.py", line 
+186, in __call__
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\errors.py", line 
+164, in __call__
+    await self.app(scope, 
+receive, _send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\cors.py", line 
+87, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+191, in __call__
+    with recv_stream, 
+send_stream, 
+collapse_excgroups():
+  File "C:\Program Files\P
+ython310\lib\contextlib.py
+", line 153, in __exit__
+    self.gen.throw(typ, 
+value, traceback)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ut
+ils.py", line 87, in 
+collapse_excgroups
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+193, in __call__
+    response = await self.
+dispatch_func(request, 
+call_next)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 87, in 
+dispatch
+    response = await 
+call_next(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+168, in call_next
+    raise app_exc from 
+app_exc.__cause__ or 
+app_exc.__context__
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+144, in coro
+    await self.app(scope, 
+receive_or_disconnect, 
+send_no_error)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\exceptions.py", 
+line 63, in __call__
+    await wrap_app_handlin
+g_exceptions(self.app, 
+conn)(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+53, in wrapped_app
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\middl
+eware\asyncexitstack.py", 
+line 18, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 716, in 
+__call__
+    await self.middleware_
+stack(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 736, in app
+    await 
+route.handle(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 290, in 
+handle
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 130, in app
+    await wrap_app_handlin
+g_exceptions(app, 
+request)(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+53, in wrapped_app
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 116, in app
+    response = await 
+f(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 670, in app
+    raw_response = await 
+run_endpoint_function(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 324, in 
+run_endpoint_function
+    return await 
+dependant.call(**values)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 428, in 
+process_leave_approval_alt
+    return await process_l
+eave_approval(approval, 
+token)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 389, in 
+process_leave_approval
+    if approval.action == 
+'approve':
+AttributeError: 'str' 
+object has no attribute 
+'action'
+
+==========================
+==========================
+==================
+ERROR: test_leave_approval
+_workflow (tests.test_modu
+le2_knowledge_base.TestMod
+ule2KnowledgeBase)
+Test 3.3: Leave approval 
+workflow
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\te
+sts\test_module2_knowledge
+_base.py", line 361, in te
+st_leave_approval_workflow
+    response = self.client
+.post("/api/leave-approval
+", json=approval_data)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\tes
+tclient.py", line 546, in 
+post
+    return super().post(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 1144, in post
+    return self.request(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\tes
+tclient.py", line 445, in 
+request
+    return 
+super().request(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 825, in request
+    return 
+self.send(request, 
+auth=auth, follow_redirect
+s=follow_redirects)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 914, in send
+    response = 
+self._send_handling_auth(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 942, in 
+_send_handling_auth
+    response = self._send_
+handling_redirects(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 979, in 
+_send_handling_redirects
+    response = self._send_
+single_request(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 1014, in 
+_send_single_request
+    response = transport.h
+andle_request(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\tes
+tclient.py", line 348, in 
+handle_request
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\tes
+tclient.py", line 345, in 
+handle_request
+    portal.call(self.app, 
+scope, receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\anyio\from_th
+read.py", line 334, in 
+call
+    return cast(T_Retval, 
+self.start_task_soon(func,
+ *args).result())
+  File "C:\Program Files\P
+ython310\lib\concurrent\fu
+tures\_base.py", line 
+458, in result
+    return 
+self.__get_result()
+  File "C:\Program Files\P
+ython310\lib\concurrent\fu
+tures\_base.py", line 
+403, in __get_result
+    raise self._exception
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\anyio\from_th
+read.py", line 259, in 
+_call_func
+    retval = await 
+retval_or_awaitable
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\appli
+cations.py", line 1160, 
+in __call__
+    await 
+super().__call__(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\app
+lications.py", line 107, 
+in __call__
+    await self.middleware_
+stack(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\errors.py", line 
+186, in __call__
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\errors.py", line 
+164, in __call__
+    await self.app(scope, 
+receive, _send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\cors.py", line 
+87, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+191, in __call__
+    with recv_stream, 
+send_stream, 
+collapse_excgroups():
+  File "C:\Program Files\P
+ython310\lib\contextlib.py
+", line 153, in __exit__
+    self.gen.throw(typ, 
+value, traceback)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ut
+ils.py", line 87, in 
+collapse_excgroups
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+193, in __call__
+    response = await self.
+dispatch_func(request, 
+call_next)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 87, in 
+dispatch
+    response = await 
+call_next(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+168, in call_next
+    raise app_exc from 
+app_exc.__cause__ or 
+app_exc.__context__
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+144, in coro
+    await self.app(scope, 
+receive_or_disconnect, 
+send_no_error)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\exceptions.py", 
+line 63, in __call__
+    await wrap_app_handlin
+g_exceptions(self.app, 
+conn)(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+53, in wrapped_app
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\middl
+eware\asyncexitstack.py", 
+line 18, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 716, in 
+__call__
+    await self.middleware_
+stack(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 736, in app
+    await 
+route.handle(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 290, in 
+handle
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 130, in app
+    await wrap_app_handlin
+g_exceptions(app, 
+request)(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+53, in wrapped_app
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 116, in app
+    response = await 
+f(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 670, in app
+    raw_response = await 
+run_endpoint_function(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 324, in 
+run_endpoint_function
+    return await 
+dependant.call(**values)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 428, in 
+process_leave_approval_alt
+    return await process_l
+eave_approval(approval, 
+token)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 389, in 
+process_leave_approval
+    if approval.action == 
+'approve':
+AttributeError: 'str' 
+object has no attribute 
+'action'
+
+==========================
+==========================
+==================
+ERROR: test_leave_rejectio
+n_workflow (tests.test_mod
+ule2_knowledge_base.TestMo
+dule2KnowledgeBase)
+Test 3.4: Leave rejection 
+workflow
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\te
+sts\test_module2_knowledge
+_base.py", line 391, in te
+st_leave_rejection_workflo
+w
+    response = self.client
+.post("/api/leave-approval
+", json=rejection_data)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\tes
+tclient.py", line 546, in 
+post
+    return super().post(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 1144, in post
+    return self.request(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\tes
+tclient.py", line 445, in 
+request
+    return 
+super().request(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 825, in request
+    return 
+self.send(request, 
+auth=auth, follow_redirect
+s=follow_redirects)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 914, in send
+    response = 
+self._send_handling_auth(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 942, in 
+_send_handling_auth
+    response = self._send_
+handling_redirects(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 979, in 
+_send_handling_redirects
+    response = self._send_
+single_request(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\httpx\_client
+.py", line 1014, in 
+_send_single_request
+    response = transport.h
+andle_request(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\tes
+tclient.py", line 348, in 
+handle_request
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\tes
+tclient.py", line 345, in 
+handle_request
+    portal.call(self.app, 
+scope, receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\anyio\from_th
+read.py", line 334, in 
+call
+    return cast(T_Retval, 
+self.start_task_soon(func,
+ *args).result())
+  File "C:\Program Files\P
+ython310\lib\concurrent\fu
+tures\_base.py", line 
+458, in result
+    return 
+self.__get_result()
+  File "C:\Program Files\P
+ython310\lib\concurrent\fu
+tures\_base.py", line 
+403, in __get_result
+    raise self._exception
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\anyio\from_th
+read.py", line 259, in 
+_call_func
+    retval = await 
+retval_or_awaitable
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\appli
+cations.py", line 1160, 
+in __call__
+    await 
+super().__call__(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\app
+lications.py", line 107, 
+in __call__
+    await self.middleware_
+stack(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\errors.py", line 
+186, in __call__
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\errors.py", line 
+164, in __call__
+    await self.app(scope, 
+receive, _send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\cors.py", line 
+87, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+191, in __call__
+    with recv_stream, 
+send_stream, 
+collapse_excgroups():
+  File "C:\Program Files\P
+ython310\lib\contextlib.py
+", line 153, in __exit__
+    self.gen.throw(typ, 
+value, traceback)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ut
+ils.py", line 87, in 
+collapse_excgroups
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+193, in __call__
+    response = await self.
+dispatch_func(request, 
+call_next)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 87, in 
+dispatch
+    response = await 
+call_next(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+168, in call_next
+    raise app_exc from 
+app_exc.__cause__ or 
+app_exc.__context__
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\base.py", line 
+144, in coro
+    await self.app(scope, 
+receive_or_disconnect, 
+send_no_error)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\mid
+dleware\exceptions.py", 
+line 63, in __call__
+    await wrap_app_handlin
+g_exceptions(self.app, 
+conn)(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+53, in wrapped_app
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\middl
+eware\asyncexitstack.py", 
+line 18, in __call__
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 716, in 
+__call__
+    await self.middleware_
+stack(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 736, in app
+    await 
+route.handle(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\rou
+ting.py", line 290, in 
+handle
+    await self.app(scope, 
+receive, send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 130, in app
+    await wrap_app_handlin
+g_exceptions(app, 
+request)(scope, receive, 
+send)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+53, in wrapped_app
+    raise exc
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\starlette\_ex
+ception_handler.py", line 
+42, in wrapped_app
+    await app(scope, 
+receive, sender)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 116, in app
+    response = await 
+f(request)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 670, in app
+    raw_response = await 
+run_endpoint_function(
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\venv\lib\s
+ite-packages\fastapi\routi
+ng.py", line 324, in 
+run_endpoint_function
+    return await 
+dependant.call(**values)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 428, in 
+process_leave_approval_alt
+    return await process_l
+eave_approval(approval, 
+token)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ma
+in.py", line 389, in 
+process_leave_approval
+    if approval.action == 
+'approve':
+AttributeError: 'str' 
+object has no attribute 
+'action'
+
+==========================
+==========================
+==================
+ERROR: 
+test_rag_with_no_context (
+tests.test_module2_knowled
+ge_base.TestModule2Knowled
+geBase)
+Test 5.2: RAG behavior 
+with no relevant context
+--------------------------
+--------------------------
+------------------
+Traceback (most recent 
+call last):
+  File "C:\Program Files\P
+ython310\lib\unittest\mock
+.py", line 1379, in 
+patched
+    return func(*newargs, 
+**newkeywargs)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\te
+sts\test_module2_knowledge
+_base.py", line 494, in 
+test_rag_with_no_context
+    response = rag.process
+_rag_query("What is the 
+company dress code for 
+summer?")
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ra
+g.py", line 274, in 
+process_rag_query
+    context = get_layered_
+context(query, top_k=5)
+  File "C:\Users\HP\Deskto
+p\hrflux\HRFLUX\backend\ra
+g.py", line 261, in 
+get_layered_context
+    print(f"\u26a0\ufe0f 
+[LayeredRAG] Falling back 
+to basic_hr_policy.md")
+  File "C:\Program Files\P
+ython310\lib\encodings\cp1
+252.py", line 19, in 
+encode
+    return codecs.charmap_
+encode(input,self.errors,e
+ncoding_table)[0]
+UnicodeEncodeError: 
+'charmap' codec can't 
+encode characters in 
+position 0-1: character 
+maps to <undefined>
+
+--------------------------
+--------------------------
+------------------
+Ran 21 tests in 22.092s
+
+FAILED (errors=5)
