@@ -176,7 +176,7 @@ export default function Dashboard() {
     );
   }
 
-  const getDismissedIds = (): Set<number> => {
+  function getDismissedIds(): Set<number> {
     try {
       const raw = localStorage.getItem('hrflux_dismissed_notifs');
       return new Set(raw ? JSON.parse(raw) : []);
@@ -185,13 +185,13 @@ export default function Dashboard() {
     }
   };
 
-  const addDismissedId = (id: number) => {
+  function addDismissedId(id: number) {
     const ids = getDismissedIds();
     ids.add(id);
     localStorage.setItem('hrflux_dismissed_notifs', JSON.stringify([...ids]));
   };
 
-  const loadNotifications = async () => {
+  async function loadNotifications() {
     try {
       const dismissed = getDismissedIds();
       const res = await hrApi.getProactiveNotifications();
@@ -221,7 +221,7 @@ export default function Dashboard() {
     }
   };
 
-  const loadAnnouncements = async () => {
+  async function loadAnnouncements() {
     try {
       const res = await hrApi.getAnnouncements();
       setAnnouncements(res.data || []);
@@ -230,7 +230,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleCloseNotification = async (index: number) => {
+  async function handleCloseNotification(index: number) {
     const notif = notifications[index];
     if (notif?.id) {
       // Track dismissal permanently on this browser
@@ -239,7 +239,7 @@ export default function Dashboard() {
     setNotifications(prev => prev.filter((_, i) => i !== index));
   };
 
-  const loadHistory = async () => {
+  async function loadHistory() {
     try {
       const res = await chatApi.getHistory(user!.employee_id);
       const history = res.data.history.flatMap((m: any) => [

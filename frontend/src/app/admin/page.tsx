@@ -197,9 +197,6 @@ export default function AdminDashboard() {
             >
               Broadcast
             </Button>
-            <Button size="large" className="font-bold rounded-xl" icon={<TrendingUp size={16} />}>
-              Reports
-            </Button>
           </div>
         </header>
 

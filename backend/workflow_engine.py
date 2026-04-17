@@ -510,6 +510,15 @@ class LeaveWorkflowEngine:
         
         try:
             c.execute("""
+                SELECT lr.employee_id 
+                FROM workflow_escalations we
+                JOIN leave_requests_v2 lr ON we.request_id = lr.id
+                WHERE we.id = ?
+            """, (escalation_id,))
+            res = c.fetchone()
+            emp_id = res[0] if res else None
+
+            c.execute("""
                 UPDATE workflow_escalations
                 SET status = 'resolved',
                     resolved_at = ?,
@@ -521,6 +530,16 @@ class LeaveWorkflowEngine:
                 return {'success': False, 'message': 'Escalation not found'}
                 
             conn.commit()
+
+            if emp_id:
+                NotificationManager.create_notification(
+                    user_id=emp_id,
+                    n_type="success",
+                    title="Support Escalation Resolved",
+                    message="Your leave request escalation has been reviewed and resolved by an administrator.",
+                    priority=1
+                )
+
             return {'success': True, 'message': 'Escalation resolved successfully'}
             
         except Exception as e:
@@ -696,6 +715,10 @@ class ChatEscalationEngine:
         c = conn.cursor()
         
         try:
+            c.execute("SELECT employee_id, username FROM chat_escalations WHERE id = ?", (escalation_id,))
+            res = c.fetchone()
+            emp_id = res[0] if (res and res[0]) else (res[1] if res else None)
+
             c.execute("""
                 UPDATE chat_escalations
                 SET status = 'resolved',
@@ -708,6 +731,16 @@ class ChatEscalationEngine:
                 return {'success': False, 'message': 'Escalation not found'}
                 
             conn.commit()
+
+            if emp_id:
+                NotificationManager.create_notification(
+                    user_id=emp_id,
+                    n_type="success",
+                    title="Support Query Resolved",
+                    message="Your escalated support query has been resolved by an administrator.",
+                    priority=1
+                )
+
             return {'success': True, 'message': 'Escalation resolved'}
             
         except Exception as e:

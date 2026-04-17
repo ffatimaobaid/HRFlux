@@ -28,7 +28,6 @@ export default function AdminSidebar() {
     { name: 'Document Manager', icon: <Files size={20} />, href: '/admin/documents' },
     { name: 'Settings', icon: <Settings size={20} />, href: '/admin/settings' },
     { name: 'Admin ChatBot', icon: <Bot size={20} />, href: '/admin/chat' },
-    { name: 'Multi-Modal AI', icon: <ShieldCheck size={20} />, href: '/admin/multimodal' },
   ];
 
   return (
