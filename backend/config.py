@@ -131,6 +131,7 @@ def test_and_set_working_key():
 
 # --- GEMINI KEY ROTATION (MIRRORED LOGIC) ---
 GEMINI_API_KEYS = [
+    "AQ.Ab8RN6JPI9DskmmW9X7wDODvt3-qU9oEgcQbAEG_EFLqD0Vtog",
     "AIzaSyDOEdBEO1YBrEXnxnHzcpaKzFoE163cW0M",
     "AIzaSyDJgn14PJaB1zu0B2kedhhs8fX6cAlfHLc", # active
 ]
@@ -164,7 +165,7 @@ def is_gemini_key_available(api_key):
 def set_working_gemini_key_first():
     """Prioritize the primary working Gemini key"""
     global gemini_current_key_index, GEMINI_API_KEYS
-    working_key = "AIzaSyBiVFAKx9gM_wrYNdgDRzsMwGWNyykX9zE"
+    working_key = "AQ.Ab8RN6JPI9DskmmW9X7wDODvt3-qU9oEgcQbAEG_EFLqD0Vtog"
     
     if working_key in GEMINI_API_KEYS:
         if working_key != GEMINI_API_KEYS[0]:

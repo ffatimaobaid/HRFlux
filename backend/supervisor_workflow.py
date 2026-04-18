@@ -96,77 +96,71 @@ class AgentStateShim(TypedDict):
     chat_history_str: str
 
 def invoke_agent_legacy(state: AgentStateShim):
-    # Adapter for older files (like agent.py)
+    """
+    Adapter for production files (like agent.py).
+    Ensures context is preserved by passing proper message turns.
+    """
     query = state['messages'][-1].content
     user = state.get("username", "Unknown")
     
+    # Consistent thread ID for persistent memory
     config = {"configurable": {"thread_id": f"thread_{user}"}}
     
-    # ALWAYS pull the most recent context from SQLite to bypass memory wipes from server reloads
-    history_text = "No previous history."
+    # 1. Fetch recent history and convert to proper Message objects
+    full_messages = []
     try:
         from db import get_recent_history
-        # Limit to 3 most recent QA pairs to avoid enormous context
-        recent = get_recent_history(user, limit=3)
-        if recent:
-            history_text = ""
-            for q, a in recent:
-                history_text += f"\nUser: {q}\nAI: {a}\n"
-    except Exception as e:
-        logger.warning(f"Failed to fetch DB history for thread_{user}: {e}")
+        from langchain_core.messages import HumanMessage, AIMessage
+        
+        # Hydrate context with current environment data
+        now = datetime.now()
+        ctx_info = f"Context: User={user}, Date={now.strftime('%Y-%m-%d')}, Day={now.strftime('%A')}, Time={now.strftime('%H:%M:%S')}"
+        full_messages.append(SystemMessage(content=f"{SYSTEM_PROMPT}\n\n{ctx_info}"))
 
-    # Send only the latest human message with current context (Date/Time/Day) AND recent DB history
-    now = datetime.now()
-    date_str = now.strftime("%Y-%m-%d")
-    day_str = now.strftime("%A")
-    time_str = now.strftime("%H:%M:%S")
-    
-    contextual_prompt = (
-        f"Current Context: User: '{user}', Date: {date_str}, Day: {day_str}, Time: {time_str}\n\n"
-        f"--- Previous Recent Chat History ---\n{history_text}\n----------------------------------\n\n"
-        f"User Question: {query}"
-    )
-    
-    input_message = HumanMessage(content=contextual_prompt)
+        # Fetch last 5 QA pairs to provide deep context without overloading tokens
+        recent = get_recent_history(user, limit=5)
+        if recent:
+            # History comes in (question, answer) tuples
+            for q, a in reversed(recent): # reversed because get_recent_history usually returns newest first
+                if q: full_messages.append(HumanMessage(content=q))
+                if a: full_messages.append(AIMessage(content=a))
+    except Exception as e:
+        logger.warning(f"Failed to fetch/parse DB history for thread_{user}: {e}")
+
+    # 2. Add the current user query
+    full_messages.append(HumanMessage(content=query))
     
     try:
-        # PRIMARY: Attempt Groq Agent invocation
-        result = hrflux_agent.invoke({"messages": [input_message]}, config)
+        # PRIMARY: Attempt Groq Agent invocation with full message sequence
+        result = hrflux_agent.invoke({"messages": full_messages}, config)
+        
     except Exception as e:
         logger.warning(f"Groq primary assistant failed: {e}. Falling back to Smart Gemini Agent...")
         
-        # FALLBACK: Use the full-featured Gemini Agent Graph with tool parity
+        # FALLBACK: Use the Gemini Agent Graph with tool parity
         try:
-            # We must use a unique thread ID for Gemini to avoid state collisions if needed, 
-            # but usually thread_{user} is fine as it's separate from Groq's local memory object.
-            
-            # ATTEMPT FALLBACK WITH ROTATION support
-            from config import get_current_gemini_key
-            for attempt in range(2): # Try rotation if needed
+            from config import get_current_gemini_key, rotate_gemini_key
+            for attempt in range(2): 
                 try:
-                    result = gemini_agent.invoke({"messages": [input_message]}, config)
+                    result = gemini_agent.invoke({"messages": full_messages}, config)
                     break 
                 except Exception as gem_e:
                     if ("quota" in str(gem_e).lower() or "429" in str(gem_e)) and attempt < 1:
                         logger.warning(f"Gemini quota hit, rotating key...")
                         rotate_gemini_key()
-                        # We need to recreate the agent/llm if we want to update the key immediately
-                        # but ChatGoogleGenerativeAI might need a fresh instance.
-                        # For now, let's just use the fallback shim if the graph fails.
                         continue
                     raise gem_e
 
         except Exception as gemini_e:
             logger.error(f"Critical Fallback Failure (Gemini Agent): {gemini_e}")
-            # Final secondary fallback to raw Gemini text (very robust)
+            # Final secondary fallback to raw Gemini text
             try:
                 from gemini_llm import query_gemini
-                fallback_answer = query_gemini([], f"User '{user}' asks: {query} (Note: System context: Date={date_str}, Day={day_str})")
+                fallback_answer = query_gemini([], f"User '{user}' asks: {query} (System Context: {ctx_info})")
                 from langchain_core.messages import AIMessage
-                result = {"messages": [HumanMessage(content=query), AIMessage(content=fallback_answer)]}
+                result = {"messages": full_messages + [AIMessage(content=fallback_answer)]}
             except Exception as final_e:
                 logger.error(f"Total System Failure: {final_e}")
-                raise e # Re-raise original Groq error
+                raise e 
     
-    # Return the format that agent.py expects
     return {"messages": result["messages"]}

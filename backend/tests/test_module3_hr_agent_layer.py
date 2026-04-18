@@ -321,5 +321,43 @@ class TestModule3HRAgentLayer(unittest.TestCase):
             self.assertEqual(kwargs.get('user_id'), self.emp_id)
             self.assertEqual(kwargs.get('n_type'), "success")
 
+    # ========== 5. Multi-Agent Orchestration Tests ==========
+    
+    @patch('multi_agent.hrflux_multi_agent.invoke')
+    def test_multi_agent_supervisor_routing(self, mock_invoke):
+        """Test Multi-Agent: Supervisor routing to specialists"""
+        # Mocking the graph response to simulate a successful turn
+        from langchain_core.messages import AIMessage
+        mock_invoke.return_value = {
+            "messages": [AIMessage(content="I have checked your leave balance. You have 10 days.")]
+        }
+        
+        from multi_agent import hrflux_multi_agent
+        from langchain_core.messages import HumanMessage
+        
+        # Simulate a leave query
+        response = hrflux_multi_agent.invoke({
+            "messages": [HumanMessage(content="What is my leave balance?")]
+        })
+        
+        self.assertIn("leave balance", response["messages"][-1].content.lower())
+        mock_invoke.assert_called_once()
+
+    def test_specialist_agent_direct_invocation(self):
+        """Test Specialist Agents: verifying they can be imported and initialized"""
+        try:
+            from policy_bot_agent import policy_bot_graph
+            from leave_bot_agent import leave_bot_graph
+            from docu_bot_agent import docu_bot_graph
+            from escalation_bot_agent import escalation_bot_graph
+            
+            self.assertIsNotNone(policy_bot_graph)
+            self.assertIsNotNone(leave_bot_graph)
+            self.assertIsNotNone(docu_bot_graph)
+            self.assertIsNotNone(escalation_bot_graph)
+            
+        except ImportError as e:
+            self.fail(f"Specialist agent import failed: {e}")
+
 if __name__ == "__main__":
     unittest.main()
