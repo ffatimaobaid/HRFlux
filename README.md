@@ -238,10 +238,10 @@ This project is licensed under the MIT License.
 
 ## 👥 Authors
 
--Shayane Zainab 
--Hadia Mazhar
--Fatima Obaid
--Supervisor: Dr. Adil Majeed
+- Shayane Zainab 
+- Hadia Mazhar
+- Fatima Obaid
+- Supervisor: Dr. Adil Majeed
 
 ## 🙏 Acknowledgments
 
