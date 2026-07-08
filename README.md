@@ -1,407 +1,260 @@
-<div align="center">
+﻿# HRFlux - AI-Powered HR Chatbot System
 
-# 🚀 HRFlux — AI-Powered Multi-Agent HR Assistant
+An intelligent HR chatbot system powered by Google Gemini AI, featuring automated leave management, document processing, and an admin dashboard for HR staff.
 
-### Automating 80%+ of routine HR operations through specialized AI agents, RAG-based policy retrieval, and intelligent workflow orchestration.
+## 🌟 Features
 
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
-[![LangGraph](https://img.shields.io/badge/LangGraph-Multi--Agent-FF6F00?style=for-the-badge)](https://langchain-ai.github.io/langgraph/)
-[![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector_DB-FF6B6B?style=for-the-badge)](https://www.trychroma.com)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
+### Employee Interface
+- **Intelligent Q&A**: Natural language queries about HR policies, procedures, and benefits
+- **Leave Management**: Submit and track leave requests with automatic validation
+- **Leave Balance Tracking**: Check available leave balances in real-time
+- **Multimodal Support**: Process text, images, documents, audio, and video
+- **Conversation History**: Maintains context across chat sessions
+- **Smart Date Parsing**: Handles natural language dates (e.g., "15 dec", "next monday")
 
----
+### HR Admin Interface
+- **Dashboard**: Real-time KPIs and metrics
+- **Leave Approvals**: Review and approve/reject leave requests
+- **Query Monitoring**: Track all employee interactions
+- **Escalation Management**: Automated escalation of pending requests
+- **Document Management**: Upload and manage policy documents
+- **System Configuration**: Configure AI models and system settings
 
-**Final Year Project** · Department of Computer Science  
-National University of Computer & Emerging Sciences (FAST-NUCES), Islamabad  
-Session 2022–2026 · Supervised by **Mr. Adil Majeed**
+### Workflow Engine
+- **Automated Validation**: Leave balance and overlap checking
+- **Approval Workflow**: Multi-level approval system
+- **Escalation System**: Auto-escalate stale requests after 7 days
+- **Audit Trail**: Complete history of all requests and approvals
 
-</div>
+## 🏗️ Architecture
 
----
-
-## 📋 Table of Contents
-
-- [Problem & Motivation](#-problem--motivation)
-- [Key Features](#-key-features)
-- [System Architecture](#-system-architecture)
-- [Multi-Agent Design](#-multi-agent-design)
-- [Tech Stack](#-tech-stack)
-- [Project Structure](#-project-structure)
-- [Getting Started](#-getting-started)
-- [API Endpoints](#-api-endpoints)
-- [Security & Guardrails](#-security--guardrails)
-- [Testing](#-testing)
-- [Team](#-team)
-- [License](#-license)
-
----
-
-## 🎯 Problem & Motivation
-
-HR departments spend up to **60% of their time** on repetitive queries — leave balances, NOC requests, policy clarifications — while employees struggle with buried information, inconsistent answers, and slow approvals. Existing FAQ tools provide generic, out-of-context responses that end up pushing queries back to HR.
-
-**HRFlux** solves this by deploying **specialized AI agents**, each mastering a specific HR domain, coordinated through an intelligent supervisor workflow. Instead of one generic chatbot, HRFlux provides domain-accurate, policy-grounded, and context-aware assistance — reducing HR workload and improving employee experience.
-
----
-
-## ✨ Key Features
-
-<table>
-<tr>
-<td width="50%">
-
-### 🤖 Multi-Agent System
-- **LeaveBot** — Leave balance queries, applications, and status tracking
-- **PolicyBot** — RAG-powered policy Q&A grounded in actual company documents
-- **DocuBot** — Automated generation of NOCs, experience letters, and approval memos
-- **EscalationBot** — Intelligent routing of sensitive/unresolvable queries to HR staff
-- **AdminBot** — Natural language admin operations for HR managers
-
-</td>
-<td width="50%">
-
-### 📚 RAG-Based Knowledge Engine
-- Semantic search over HR policy documents using **ChromaDB** vector store
-- Hybrid retrieval combining **dense embeddings** + **keyword search**
-- Multi-format document ingestion (PDF, DOCX, PPTX, EPUB, HTML)
-- **BLIP image captioning** + **Tesseract OCR** for visual content in documents
-- Token-aware chunking for optimal context windows
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 🔄 Workflow Automation
-- End-to-end leave request lifecycle (apply → validate → approve/reject)
-- Automatic leave balance deduction and restoration
-- SLA monitoring with **proactive notifications** (APScheduler)
-- Configurable escalation pipelines with full conversation history handover
-- Meeting scheduling and task management
-
-</td>
-<td width="50%">
-
-### 🛡️ Enterprise Security
-- **JWT-based authentication** with session management
-- **Role-based access control** (Employee / Admin / HR Manager)
-- Input sanitization (XSS, SQL injection prevention)
-- **PII detection** and content filtering
-- Rate limiting and brute-force protection
-- Full **audit trail** logging for compliance
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 🖥️ Dual-Portal Frontend
-- **Employee Dashboard** — AI chat, leave calendar, profile, task management
-- **Admin Dashboard** — Escalation management, query logs, document management, analytics, and system settings
-- Real-time smart notifications
-- Responsive design with **Ant Design** + **Framer Motion** animations
-
-</td>
-<td width="50%">
-
-### 🎯 Multimodal Intelligence
-- **Image analysis** via CLIP embeddings and BLIP captioning
-- **Audio transcription** with Whisper/SpeechRecognition
-- **Video frame extraction** and analysis (OpenCV + MoviePy)
-- **OCR text extraction** from scanned documents
-- Multimodal RAG pipeline for cross-modal retrieval
-
-</td>
-</tr>
-</table>
-
----
-
-## 🏗️ System Architecture
+### Core Components
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                        FRONTEND (Next.js 15)                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐ │
-│  │ Employee Chat │  │  Leave Cal   │  │    Admin Dashboard     │ │
-│  │   Dashboard   │  │  & Profile   │  │ (Logs/Escalations/Docs)│ │
-│  └──────┬───────┘  └──────┬───────┘  └───────────┬────────────┘ │
-└─────────┼─────────────────┼──────────────────────┼──────────────┘
-          │                 │                      │
-          ▼                 ▼                      ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                    FASTAPI BACKEND (REST API)                    │
-│  ┌────────────┐  ┌──────────────┐  ┌──────────────────────────┐ │
-│  │ Auth Manager│  │  Guardrails  │  │   Notification Engine   │ │
-│  │ + Security  │  │ + Filtering  │  │   (SLA / Reminders)     │ │
-│  └─────┬──────┘  └──────┬───────┘  └────────────┬─────────────┘ │
-│        │                │                       │               │
-│  ┌─────▼────────────────▼───────────────────────▼─────────────┐ │
-│  │              SUPERVISOR WORKFLOW (LangGraph)                │ │
-│  │  ┌──────────┐ ┌──────────┐ ┌────────┐ ┌──────────────────┐│ │
-│  │  │ LeaveBot │ │PolicyBot │ │DocuBot │ │  EscalationBot   ││ │
-│  │  └────┬─────┘ └────┬─────┘ └───┬────┘ └────────┬─────────┘│ │
-│  └───────┼─────────────┼───────────┼───────────────┼──────────┘ │
-│          │             │           │               │            │
-│  ┌───────▼─────────────▼───────────▼───────────────▼──────────┐ │
-│  │                    CORE SERVICES                            │ │
-│  │  ┌──────────┐  ┌───────────┐  ┌────────────┐  ┌─────────┐ │ │
-│  │  │ RAG      │  │ Workflow  │  │ Multimodal │  │  DB     │ │ │
-│  │  │ Pipeline │  │ Engine    │  │ Processor  │  │ Schema  │ │ │
-│  │  └────┬─────┘  └───────────┘  └────────────┘  └────┬────┘ │ │
-│  └───────┼─────────────────────────────────────────────┼──────┘ │
-└──────────┼─────────────────────────────────────────────┼────────┘
-           ▼                                             ▼
-   ┌──────────────┐                             ┌──────────────┐
-   │   ChromaDB   │                             │   SQLite DB  │
-   │ Vector Store │                             │  (queries.db)│
-   └──────────────┘                             └──────────────┘
+HRFlux/
+├── agent.py                 # Main chatbot agent with intent classification
+├── gemini_llm.py           # Google Gemini AI integration
+├── workflow_engine.py      # Leave request workflow management
+├── db_schema_v2.py         # Enhanced database schema
+├── rag.py                  # Retrieval-Augmented Generation
+├── vector_store.py         # Vector embeddings for semantic search
+├── chat_app.py             # Employee Streamlit interface
+├── admin_app.py            # HR Admin Streamlit interface
+├── backend_api.py          # FastAPI backend (optional)
+└── multimodal_processor.py # Image, video, audio processing
 ```
 
----
+### Technology Stack
 
-## 🤖 Multi-Agent Design
+- **AI/ML**: Google Gemini 1.5/2.5 Flash, Sentence Transformers
+- **Vector Database**: ChromaDB
+- **Database**: SQLite
+- **Frontend**: Streamlit
+- **Backend**: FastAPI (optional)
+- **Document Processing**: PyPDF2, PyMuPDF, python-docx, python-pptx
+- **Multimodal**: OpenCV, MoviePy, SpeechRecognition, Tesseract OCR
 
-HRFlux uses a **Supervisor-Worker architecture** powered by **LangGraph**, where a central supervisor classifies incoming queries via an LLM-based intent router and delegates them to the appropriate specialist agent:
+## 📦 Installation
 
-| Agent | Role | Key Capabilities |
-|-------|------|-------------------|
-| **🏖️ LeaveBot** | Leave Management | Balance checks, leave applications, status tracking, balance validation |
-| **📋 PolicyBot** | Policy Expert | RAG-powered Q&A, semantic document search, policy clarification |
-| **📄 DocuBot** | Document Generator | NOC letters, experience certificates, approval memos (PDF generation) |
-| **🚨 EscalationBot** | Escalation Handler | Sensitive query routing, HR handover with full context, grievance logging |
-| **⚙️ AdminBot** | Admin Operations | Natural language admin commands, employee management, system configuration |
+### Prerequisites
 
-Each agent inherits from `BaseHRAgent`, ensuring standardized response formatting, identity-preserving audit logging, and automatic employee context hydration. Off-topic queries (non-HR) are intercepted at the router level and rejected with a polite explanation.
+- Python 3.8+
+- Google Gemini API Key
+- Tesseract OCR (for image text extraction)
 
----
+### Setup
 
-## 🛠️ Tech Stack
+1. **Clone the repository**
+```bash
+git clone https://github.com/ffatimaobaid/HRFlux.git
+cd HRFlux
+```
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | Next.js 15, React 19, TypeScript 5, Ant Design 6, Framer Motion, TailwindCSS 4 |
-| **Backend API** | FastAPI, Uvicorn, Pydantic |
-| **AI/ML** | LangGraph, LangChain, Groq (Llama 3.3 70B), Google Generative AI (Gemini) |
-| **Embeddings** | Sentence-Transformers, CLIP (OpenAI), BLIP (Salesforce) |
-| **Vector Database** | ChromaDB (persistent storage) |
-| **Relational Database** | SQLite (employee records, leave requests, notifications, audit logs) |
-| **Document Processing** | PyMuPDF, PyPDF2, PDFPlumber, Tesseract OCR, python-docx, python-pptx |
-| **PDF Generation** | WeasyPrint, PDFKit, Jinja2 templates |
-| **Audio/Video** | OpenAI Whisper, SpeechRecognition, MoviePy, OpenCV, Librosa |
-| **Security** | bcrypt, JWT tokens, rate limiting, PII detection, content filtering |
-| **Scheduling** | APScheduler (SLA monitoring, proactive notifications) |
-| **Testing** | pytest, pytest-mock |
+2. **Create virtual environment**
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
----
+3. **Install dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+4. **Configure API Key**
+Create a `config.py` file:
+```python
+GEMINI_API_KEY = "your-gemini-api-key-here"
+SHOW_SOURCES = True
+```
+
+5. **Initialize Database**
+```bash
+python db_schema_v2.py
+python seed_data.py
+```
+
+6. **Ingest Policy Documents**
+Place your HR policy documents in the `policy_docs/` folder and run:
+```bash
+python chunking.py
+```
+
+## 🚀 Usage
+
+### Employee Chat Interface
+
+```bash
+streamlit run chat_app.py
+```
+
+**Default Credentials:**
+- Username: `emp001` (or any employee ID from seed data)
+- Password: `password123`
+
+**Example Queries:**
+- "What is the leave policy?"
+- "I want to apply for leave from 15 dec to 20 dec"
+- "What is my leave balance?"
+- "How do I apply for medical reimbursement?"
+
+### HR Admin Interface
+
+```bash
+streamlit run admin_app.py
+```
+
+**Features:**
+- View and approve pending leave requests
+- Monitor query logs and system metrics
+- Manage escalations
+- Upload new policy documents
+- Configure AI model settings
+
+### API Backend (Optional)
+
+```bash
+uvicorn backend_api:app --reload
+```
+
+Access API docs at: `http://localhost:8000/docs`
+
+## 📊 Database Schema
+
+### Key Tables
+
+- **employees**: Employee profiles and credentials
+- **leave_balances**: Current leave balances by type
+- **leave_requests**: All leave requests with status
+- **leave_balance_history**: Audit trail of balance changes
+- **workflow_escalations**: Escalated pending requests
+- **documents**: Uploaded policy documents
+- **logs**: Chat interaction history
+
+## 🔧 Configuration
+
+### Model Selection
+
+Edit `config.json` to change the AI model:
+```json
+{
+  "model": "models/gemini-1.5-flash"
+}
+```
+
+Available models:
+- `models/gemini-1.5-flash` (faster, cost-effective)
+- `models/gemini-2.5-flash` (latest)
+- `models/gemini-1.5-pro` (more capable)
+
+### Leave Policies
+
+Configure in `workflow_engine.py`:
+- Default leave balances
+- Escalation threshold (default: 7 days)
+- Weekend calculation logic
+
+## 🧪 Testing
+
+Run the test suite:
+
+```bash
+# Run all tests
+python -m pytest tests/
+
+# Run specific test file
+python -m pytest tests/test_workflow_engine.py
+
+# Run with coverage
+python -m pytest --cov=. tests/
+```
 
 ## 📁 Project Structure
 
 ```
-hrflux_new/
-├── backend/                        # Python backend (FastAPI)
-│   ├── main.py                     # FastAPI app entry point & REST API routes
-│   ├── agents/                     # Multi-agent architecture
-│   │   ├── base_agent.py           # Abstract base class for all agents
-│   │   ├── agent_router.py         # LLM-based intent classifier & query router
-│   │   ├── agent_factory.py        # Agent instantiation factory
-│   │   ├── leave_bot.py            # LeaveBot specialist agent
-│   │   ├── policy_bot.py           # PolicyBot specialist agent
-│   │   ├── docu_bot.py             # DocuBot specialist agent
-│   │   ├── escalation_bot.py       # EscalationBot specialist agent
-│   │   ├── session_memory.py       # Contextual session memory
-│   │   └── prompts.py              # Agent system prompts
-│   ├── multi_agent.py              # LangGraph supervisor workflow orchestration
-│   ├── supervisor_workflow.py      # Supervisor coordination layer
-│   ├── rag.py                      # RAG pipeline (ingest + retrieve)
-│   ├── multimodal_rag_processor.py # Multi-modal RAG (image/audio/video)
-│   ├── multimodal_processor.py     # Media processing utilities
-│   ├── workflow_engine.py          # Leave approval workflows & escalation engine
-│   ├── db_schema_v2.py             # Database schema & employee CRUD operations
-│   ├── db.py                       # Database utilities (auth, logs, chat history)
-│   ├── auth_manager.py             # Authentication with rate limiting & sessions
-│   ├── security.py                 # Security middleware
-│   ├── security_config.py          # Comprehensive security configuration
-│   ├── guardrails.py               # Content filtering, PII detection, input validation
-│   ├── notifications.py            # Notification manager (SLA alerts, reminders)
-│   ├── proactive_notif.py          # Proactive notification engine
-│   ├── embedder.py                 # Sentence-Transformer embedding model
-│   ├── vector_store.py             # ChromaDB vector store operations
-│   ├── chunking.py                 # Token-aware document chunking
-│   ├── config.py                   # LLM configuration & API key management
-│   ├── gemini_llm.py               # Google Gemini LLM integration
-│   ├── groq_client.py              # Groq API client (Llama 3.3 70B)
-│   ├── templates/                  # HTML templates (login, dashboard, documents)
-│   └── tests/                      # 28 test files covering all modules
-│       ├── test_module1_database.py
-│       ├── test_module2_knowledge_base.py
-│       ├── test_module3_hr_agent_layer.py
-│       ├── test_guardrails.py
-│       └── ...
-│
-├── frontend/                       # Next.js 15 frontend (TypeScript)
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── login/              # Authentication page
-│   │   │   ├── dashboard/          # Employee portal
-│   │   │   │   ├── page.tsx        # AI Chat interface
-│   │   │   │   ├── calendar/       # Leave calendar view
-│   │   │   │   └── profile/        # Employee profile management
-│   │   │   └── admin/              # Admin portal
-│   │   │       ├── page.tsx        # Admin dashboard & analytics
-│   │   │       ├── chat/           # Admin AI chat (AdminBot)
-│   │   │       ├── escalations/    # Escalation management
-│   │   │       ├── documents/      # Document management
-│   │   │       ├── logs/           # Query audit logs
-│   │   │       ├── multimodal/     # Multimodal document upload & analysis
-│   │   │       └── settings/       # System configuration
-│   │   ├── components/             # Reusable UI components
-│   │   │   ├── Sidebar.tsx         # Employee navigation sidebar
-│   │   │   ├── AdminSidebar.tsx    # Admin navigation sidebar
-│   │   │   └── SmartNotification.tsx # Real-time notification system
-│   │   └── hooks/                  # Custom React hooks
-│   └── package.json
-│
-├── start.ps1                       # One-command startup script (backend + frontend)
-├── requirements.txt                # Python dependencies
-└── policy_docs/                    # HR policy documents for RAG ingestion
+HRFlux/
+├── agent.py                    # Main agent logic
+├── admin_app.py                # Admin dashboard
+├── backend_api.py              # FastAPI endpoints
+├── chat_app.py                 # Employee chat UI
+├── chunking.py                 # Document chunking
+├── config.py                   # Configuration (gitignored)
+├── db.py                       # Legacy database functions
+├── db_schema_v2.py             # Enhanced schema
+├── embedder.py                 # Text embeddings
+├── gemini_client.py            # Gemini API client
+├── gemini_llm.py               # LLM query functions
+├── hr_knowledge_base.py        # Structured HR knowledge
+├── multimodal_processor.py     # Multimodal processing
+├── rag.py                      # RAG implementation
+├── vector_store.py             # Vector search
+├── workflow_engine.py          # Leave workflow
+├── policy_docs/                # HR policy documents
+├── tests/                      # Test suite
+│   ├── test_agent.py
+│   ├── test_workflow_engine.py
+│   └── test_database.py
+└── requirements.txt            # Python dependencies
 ```
 
----
+## 🔐 Security Notes
 
-## 🚀 Getting Started
+- **API Keys**: Never commit `config.py` to version control
+- **Database**: `queries.db` contains sensitive employee data - excluded from git
+- **Passwords**: Use proper hashing in production (currently simplified for demo)
+- **Authentication**: Implement proper session management for production use
 
-### Prerequisites
+## 🤝 Contributing
 
-- **Python 3.10+**
-- **Node.js 18+** & npm
-- **Tesseract OCR** — `choco install tesseract` (Windows) or `brew install tesseract` (macOS)
-- **wkhtmltopdf** — Required for PDF generation ([download](https://wkhtmltopdf.org/downloads.html))
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-### Quick Start (One Command)
+## 📝 License
 
-```powershell
-# Clone the repository
-git clone https://github.com/ffatimaobaid/hrflux_new.git
-cd hrflux_new
+This project is licensed under the MIT License.
 
-# Run the startup script — handles venv, dependencies, DB seeding, and launches both servers
-.\start.ps1
-```
+## 👥 Authors
 
-The script will:
-1. ✅ Create a Python virtual environment (if not exists)
-2. ✅ Install all Python dependencies from `requirements.txt`
-3. ✅ Initialize and seed the database
-4. ✅ Launch the **backend** at `http://localhost:8000`
-5. ✅ Launch the **frontend** at `http://localhost:3000`
+- Shayane Zainab 
+- Hadia Mazhar
+- Fatima Obaid
+- Supervisor: Dr. Adil Majeed
 
-### Manual Setup
+## 🙏 Acknowledgments
 
-```bash
-# Backend
-python -m venv venv
-.\venv\Scripts\activate          # Windows
-pip install -r requirements.txt
-python backend/main.py           # Starts FastAPI on port 8000
+- Google Gemini AI for powerful language models
+- Streamlit for rapid UI development
+- ChromaDB for vector storage
+- The open-source community
 
-# Frontend (in a separate terminal)
-cd frontend
-npm install
-npm run dev                      # Starts Next.js on port 3000
-```
+## 📧 Contact
 
-### Environment Configuration
-
-Create a `backend/config.py` file (see `backend/config.py.example`):
-
-```python
-GROQ_API_KEY = "your-groq-api-key"
-GEMINI_API_KEY = "your-google-gemini-api-key"
-```
+For questions or support, please open an issue on GitHub.
 
 ---
 
-## 🔌 API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/login` | User authentication |
-| `POST` | `/signup` | New user registration |
-| `POST` | `/chat` | Send message to AI agent (auto-routed) |
-| `GET` | `/employees` | List all employees |
-| `GET` | `/employees/{id}` | Get employee details |
-| `POST` | `/employees` | Add new employee |
-| `GET` | `/leave/balance/{id}` | Check leave balance |
-| `POST` | `/leave/apply` | Submit leave request |
-| `PUT` | `/leave/approve/{id}` | Approve/reject leave |
-| `GET` | `/leave/history/{id}` | Leave request history |
-| `POST` | `/upload` | Upload document for RAG ingestion |
-| `POST` | `/upload-multimodal` | Upload multimodal document (image/audio/video) |
-| `GET` | `/logs` | Query audit logs |
-| `GET` | `/notifications/{user}` | Get user notifications |
-| `GET` | `/escalations` | List escalated queries |
-
-> Full interactive API documentation available at `http://localhost:8000/docs` (Swagger UI)
-
----
-
-## 🛡️ Security & Guardrails
-
-HRFlux implements **defense-in-depth** security:
-
-- **Authentication** — bcrypt password hashing, JWT session tokens, configurable session timeouts
-- **Rate Limiting** — Max login attempts with automatic lockout periods
-- **Input Validation** — SQL injection prevention, XSS sanitization, input length enforcement
-- **Content Filtering** — Profanity detection, inappropriate content blocking
-- **PII Detection** — Automated detection of phone numbers, SSNs, credit cards, emails in chat
-- **Off-Topic Rejection** — LLM-powered intent classifier blocks non-HR queries at the router level
-- **Audit Logging** — Every agent interaction is logged with timestamps for compliance
-- **Role-Based Access** — Separate Employee and Admin portals with distinct permissions
-
----
-
-## 🧪 Testing
-
-The project includes **28 test files** covering all four modules:
-
-```bash
-# Run all tests
-cd backend
-python -m pytest tests/ -v
-
-# Run specific module tests
-python -m pytest tests/test_module1_database.py -v          # Database & schema
-python -m pytest tests/test_module2_knowledge_base.py -v    # RAG & vector store
-python -m pytest tests/test_module3_hr_agent_layer.py -v    # Agent routing & responses
-python -m pytest tests/test_guardrails.py -v                # Security & content filtering
-```
-
----
-
-## 👥 Team
-
-| Name | Registration | Key Contributions |
-|------|-------------|-------------------|
-| **Fatima Obaid** | 22I-0475 | Database design, policy document upload, EscalationBot, employee chatbot |
-| **Hadia Mazhar** | 22I-0487 | HR policy integration, policy search & answering, DocuBot, admin dashboard |
-| **Shayane Zainab** | 22I-1049 | Data preprocessing, knowledge base embedding & retrieval, LeaveBot, PolicyBot |
-
----
-
-## 📄 License
-
-This project was developed as a Final Year Project (FYP) at FAST-NUCES, Islamabad. All rights reserved.
-
----
-
-<div align="center">
-
-**Built with ❤️ at FAST-NUCES Islamabad**
-
-*If you found this project interesting, feel free to ⭐ the repository!*
-
-</div>
+**Note**: This is a demonstration project. For production use, implement proper security measures, authentication, and data protection.
+# hrfluxdemo
