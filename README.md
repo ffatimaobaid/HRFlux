@@ -16,7 +16,7 @@
 
 **Final Year Project** · Department of Computer Science  
 National University of Computer & Emerging Sciences (FAST-NUCES), Islamabad  
-Session 2022–2026 · Supervised by **Mr. Adil Majeed**
+Session 2022–2026 · Supervised by **Dr. Adil Majeed**
 
 </div>
 
