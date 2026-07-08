@@ -22,7 +22,7 @@ Session 2022–2026 · Supervised by **Mr. Adil Majeed**
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 
 - [Problem & Motivation](#-problem--motivation)
 - [Key Features](#-key-features)
@@ -39,7 +39,7 @@ Session 2022–2026 · Supervised by **Mr. Adil Majeed**
 
 ---
 
-## 🎯 Problem & Motivation
+##  Problem & Motivation
 
 HR departments spend up to **60% of their time** on repetitive queries — leave balances, NOC requests, policy clarifications — while employees struggle with buried information, inconsistent answers, and slow approvals. Existing FAQ tools provide generic, out-of-context responses that end up pushing queries back to HR.
 
@@ -47,13 +47,13 @@ HR departments spend up to **60% of their time** on repetitive queries — leave
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
 <table>
 <tr>
 <td width="50%">
 
-### 🤖 Multi-Agent System
+### Multi-Agent System
 - **LeaveBot** — Leave balance queries, applications, and status tracking
 - **PolicyBot** — RAG-powered policy Q&A grounded in actual company documents
 - **DocuBot** — Automated generation of NOCs, experience letters, and approval memos
@@ -63,7 +63,7 @@ HR departments spend up to **60% of their time** on repetitive queries — leave
 </td>
 <td width="50%">
 
-### 📚 RAG-Based Knowledge Engine
+### RAG-Based Knowledge Engine
 - Semantic search over HR policy documents using **ChromaDB** vector store
 - Hybrid retrieval combining **dense embeddings** + **keyword search**
 - Multi-format document ingestion (PDF, DOCX, PPTX, EPUB, HTML)
@@ -75,7 +75,7 @@ HR departments spend up to **60% of their time** on repetitive queries — leave
 <tr>
 <td width="50%">
 
-### 🔄 Workflow Automation
+### Workflow Automation
 - End-to-end leave request lifecycle (apply → validate → approve/reject)
 - Automatic leave balance deduction and restoration
 - SLA monitoring with **proactive notifications** (APScheduler)
@@ -85,7 +85,7 @@ HR departments spend up to **60% of their time** on repetitive queries — leave
 </td>
 <td width="50%">
 
-### 🛡️ Enterprise Security
+### Enterprise Security
 - **JWT-based authentication** with session management
 - **Role-based access control** (Employee / Admin / HR Manager)
 - Input sanitization (XSS, SQL injection prevention)
@@ -98,7 +98,7 @@ HR departments spend up to **60% of their time** on repetitive queries — leave
 <tr>
 <td width="50%">
 
-### 🖥️ Dual-Portal Frontend
+### Dual-Portal Frontend
 - **Employee Dashboard** — AI chat, leave calendar, profile, task management
 - **Admin Dashboard** — Escalation management, query logs, document management, analytics, and system settings
 - Real-time smart notifications
@@ -107,7 +107,7 @@ HR departments spend up to **60% of their time** on repetitive queries — leave
 </td>
 <td width="50%">
 
-### 🎯 Multimodal Intelligence
+### Multimodal Intelligence
 - **Image analysis** via CLIP embeddings and BLIP captioning
 - **Audio transcription** with Whisper/SpeechRecognition
 - **Video frame extraction** and analysis (OpenCV + MoviePy)
@@ -120,7 +120,7 @@ HR departments spend up to **60% of their time** on repetitive queries — leave
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -163,7 +163,7 @@ HR departments spend up to **60% of their time** on repetitive queries — leave
 
 ---
 
-## 🤖 Multi-Agent Design
+## Multi-Agent Design
 
 HRFlux uses a **Supervisor-Worker architecture** powered by **LangGraph**, where a central supervisor classifies incoming queries via an LLM-based intent router and delegates them to the appropriate specialist agent:
 
@@ -179,7 +179,7 @@ Each agent inherits from `BaseHRAgent`, ensuring standardized response formattin
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -198,7 +198,7 @@ Each agent inherits from `BaseHRAgent`, ensuring standardized response formattin
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 hrflux_new/
@@ -272,7 +272,7 @@ hrflux_new/
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -293,11 +293,11 @@ cd hrflux_new
 ```
 
 The script will:
-1. ✅ Create a Python virtual environment (if not exists)
-2. ✅ Install all Python dependencies from `requirements.txt`
-3. ✅ Initialize and seed the database
-4. ✅ Launch the **backend** at `http://localhost:8000`
-5. ✅ Launch the **frontend** at `http://localhost:3000`
+1. Create a Python virtual environment (if not exists)
+2. Install all Python dependencies from `requirements.txt`
+3. Initialize and seed the database
+4. Launch the **backend** at `http://localhost:8000`
+5. Launch the **frontend** at `http://localhost:3000`
 
 ### Manual Setup
 
@@ -325,7 +325,7 @@ GEMINI_API_KEY = "your-google-gemini-api-key"
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -349,7 +349,7 @@ GEMINI_API_KEY = "your-google-gemini-api-key"
 
 ---
 
-## 🛡️ Security & Guardrails
+## Security & Guardrails
 
 HRFlux implements **defense-in-depth** security:
 
@@ -364,7 +364,7 @@ HRFlux implements **defense-in-depth** security:
 
 ---
 
-## 🧪 Testing
+## Testing
 
 The project includes **28 test files** covering all four modules:
 
@@ -382,7 +382,7 @@ python -m pytest tests/test_guardrails.py -v                # Security & content
 
 ---
 
-## 👥 Team
+## Team
 
 | Name | Registration | Key Contributions |
 |------|-------------|-------------------|
@@ -392,7 +392,7 @@ python -m pytest tests/test_guardrails.py -v                # Security & content
 
 ---
 
-## 📄 License
+## License
 
 This project was developed as a Final Year Project (FYP) at FAST-NUCES, Islamabad. All rights reserved.
 
